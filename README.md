@@ -15,7 +15,7 @@
 | Dean Facho |  dfacho@lakeheadu.ca |
 | Julia Petterle |  jgpetter@lakeheadu.ca |
 | Krishi Patel |  kpate176@lakeheadu.ca |
----
+|------|---|
 
 ##  Project Description
 
