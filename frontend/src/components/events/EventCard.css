@@ -1,0 +1,111 @@
+/* Cards are drawn as ticket stubs: a date block, a perforated edge with
+   two notches, then the details. The shadow sits on the outer element
+   because the mask on the inner one would clip it. */
+.event-card {
+  --stub-width: 5.25rem;
+  --notch: 9px;
+
+  filter: drop-shadow(0 1px 1.5px rgba(29, 26, 36, 0.14))
+    drop-shadow(0 6px 14px rgba(29, 26, 36, 0.08));
+}
+
+.event-card__ticket {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--stub-width) 1fr;
+  min-height: 9.5rem;
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  -webkit-mask:
+    radial-gradient(circle at var(--stub-width) 0, transparent var(--notch), #000 calc(var(--notch) + 0.5px))
+      top / 100% 51% no-repeat,
+    radial-gradient(circle at var(--stub-width) 100%, transparent var(--notch), #000 calc(var(--notch) + 0.5px))
+      bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle at var(--stub-width) 0, transparent var(--notch), #000 calc(var(--notch) + 0.5px))
+      top / 100% 51% no-repeat,
+    radial-gradient(circle at var(--stub-width) 100%, transparent var(--notch), #000 calc(var(--notch) + 0.5px))
+      bottom / 100% 51% no-repeat;
+}
+
+.event-card__ticket::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--notch) + 6px);
+  bottom: calc(var(--notch) + 6px);
+  left: calc(var(--stub-width) - 1px);
+  border-left: 2px dashed var(--color-line);
+}
+
+.event-card__date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-strong);
+  text-align: center;
+  line-height: 1;
+}
+
+.event-card__month,
+.event-card__weekday {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.event-card__day {
+  margin-block: 0.15rem 0.3rem;
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.event-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+}
+
+.event-card__category {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.event-card__title {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-lg);
+  overflow-wrap: anywhere;
+}
+
+.event-card__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.event-card__title a:hover {
+  text-decoration: underline;
+}
+
+.event-card__meta {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.event-card__price {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.event-card__price.is-free {
+  color: var(--color-success);
+}
