@@ -1,256 +1,105 @@
 # Whozin – Who's In
 
-**COMP 3415 – Software Engineering Project**
+**COMP 3415 – Software Engineering Project | Lakehead University**
 
-> A centralized event discovery and promotion platform designed for the Thunder Bay community.
+> A centralized event discovery and promotion platform for the Thunder Bay community.
 
 ## Team
 
 **Team Name:** Whozin (Who's In)
 
-| Team Member  | Email |
-|------|---|
-| Pranavv Patel |   ppate218@lakeheadu.ca |
-| Jinal Parekh |   jparekh5@lakeheadu.ca |
-| Dean Facho |  dfacho@lakeheadu.ca |
-| Julia Petterle |  jgpetter@lakeheadu.ca |
-| Krishi Patel |  kpate176@lakeheadu.ca |
-|------|---|
+| Team Member | Email |
+|---|---|
+| Pranavv Patel | ppate218@lakeheadu.ca |
+| Jinal Parekh | jparekh5@lakeheadu.ca |
+| Dean Facho | dfacho@lakeheadu.ca |
+| Julia Petterle | jgpetter@lakeheadu.ca |
+| Krishi Patel | kpate176@lakeheadu.ca |
 
-##  Project Description
+## Project Overview
 
-### Problem
+Event information in Thunder Bay is spread across social media, posters, and individual organization websites. Whozin aims to make local events easier to discover and promote through a centralized platform for attendees and organizers.
 
-Event information in Thunder Bay is fragmented across social media, posters, and individual organization websites. As a result, residents and students may have difficulty discovering local events, while organizers have limited centralized platforms for promoting their events.
+**P2 milestone:** This repository contains an initial working web application, not the finished product. The current milestone focuses on account registration and login, organizer event creation, event search, database integration, and automated frontend testing.
 
-### Proposed System
+### Implemented for P2
 
-**Whozin (Who's In)** is a centralized event discovery and promotion platform designed specifically for the Thunder Bay community.
+- React website with navigation, registration, login, create-event, and search pages.
+- Account registration and login through the Express API, with JWT-based authentication.
+- Attendee and organizer roles; event creation requires an organizer's authentication token.
+- Event creation persisted in MySQL through the backend API.
+- Event retrieval and keyword/location search through the backend API.
+- Frontend automated tests, linting, and production build.
 
-The system will allow **event organizers, businesses, student organizations, and content creators** to publish and promote events. Users will be able to discover and interact with events through a **social-media-style interface**.
+### Planned / not yet complete
 
----
+The broader product vision includes event editing and management, category/date filters, calendars, ticket purchasing and digital tickets, notifications, promotional posts/videos, comments, bookmarks, sharing, following, personalized feeds, and administrator tools. These should **not** be treated as completed P2 features. In particular, paid-ticket pricing is not yet fully integrated; the current create-event API submission sends a price of zero.
 
-##  Core Functionality
+## Technology Stack
 
-The platform will provide:
+| Layer | Technology | Responsibility |
+|---|---|---|
+| Frontend | React, Vite, JavaScript, HTML, CSS | Browser UI and user interaction |
+| Backend | Node.js, Express | REST endpoints, validation, authentication and authorization |
+| Database | MySQL | Persist users and events |
+| Authentication | JWT | Authenticate API requests and restrict organizer actions |
+| Testing | Vitest, React Testing Library | Frontend unit/component tests and mocked API tests |
+| Collaboration | Git, GitHub | Version control, branches, pull requests, and reviews |
 
-- User and organizer accounts
-- Event creation and management
-- Event discovery and search
-- Category and date-based filtering
-- Event calendar
-- Online ticket purchasing
-- Digital tickets
-- Notifications and reminders
-- Social posts
-- Short promotional videos
-- Likes and comments
-- Save/bookmark events
-- Event and post sharing
-- Following organizers and content creators
-- Personalized event feed
-- Event engagement and ticket information
-
----
-
-## Value
-
-Whozin will provide Thunder Bay with a centralized and engaging way to discover local events while giving organizers a more effective method of reaching their target audience.
-
-By combining **event management, ticketing, and social promotion**, the system aims to improve local event visibility and community participation.
-
----
-
-## Primary Users and Roles
-
-### Event Attendee / User
-
-Users will be able to:
-
-- Create and manage a personal account
-- Discover and search for local events
-- View event details
-- Save and share events
-- Purchase tickets
-- Access digital tickets
-- Receive notifications and reminders
-- Like and comment on event posts
-- Follow organizers and content creators
-
-###  Event Organizer
-
-Organizers will be able to:
-
-- Create, edit, and manage events
-- Upload promotional content
-- Manage ticket availability and pricing
-- View registered attendees
-- Send event-related updates
-- Monitor event engagement
-- View ticket-related information
-
-### Content Creator / Promoter
-
-Content creators and promoters will be able to:
-
-- Create promotional content for events
-- Share event-related posts and videos
-- Collaborate with event organizers
-- Promote events to users
-- Interact with event communities
-
-###  Administrator
-
-Administrators will be responsible for:
-
-- Managing users and organizers
-- Managing events
-- Managing reported content
-- Verifying or removing events and content when necessary
-- Managing user permissions
-- Monitoring overall platform activity
-- Maintaining platform security and appropriate usage
-
----
-
-##  Technology Stack
-
-### Programming Languages
-
-- TypeScript
-- JavaScript
-- HTML
-- CSS
-
-### Frontend / Mobile
-
-- **React Native** – Mobile application and responsive social-media-style interface
-
-### Backend
-
-- **Node.js**
-- **Express.js**
-- REST APIs
-- Authentication and authorization
-- Event management
-- Ticketing
-- User interactions
-
-### Database
-
-- **PostgreSQL**
-
-PostgreSQL will store:
-
-- User accounts
-- Events
-- Tickets
-- Posts
-- Comments
-- Follows
-- Saved events
-- Other application data
-
-### APIs & External Services
-
-- **Google Maps API** – Event locations and mapping
-- **Firebase Cloud Messaging** – Push notifications
-- **Stripe** – Online ticket payments
-
-### Authentication
-
-The project may use:
-
-- **Firebase Authentication**
-
-or
-
-- **JWT-based authentication**
-
-for secure login and role-based access control.
-
-### Media Storage
-
-Promotional images and videos may be stored using:
-
-- **Firebase Storage**
-- Cloud-based object storage
-
-### AI / Machine Learning
-
-An AI-based recommendation system may be explored to recommend events based on:
-
-- User interests
-- Previous interactions
-- Saved events
-- Followed organizers
-- Event engagement
-
-### Deployment
-
-Potential deployment technologies include:
-
-- **Docker** – Application containerization
-- **Render**
-- **AWS**
-- **Microsoft Azure**
-
-### Version Control
-
-- **Git**
-- **GitHub**
-
-Git and GitHub will be used for source-code management, collaboration, and version tracking.
-
----
-
-##  System Overview
-
-The proposed system will consist of several major components:
+### Current architecture
 
 ```text
-                    ┌─────────────────────┐
-                    │     Whozin App      │
-                    │   React Native UI   │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │    REST API Layer   │
-                    │ Node.js + Express.js │
-                    └──────────┬──────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-              ▼                ▼                ▼
-       ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-       │ PostgreSQL  │  │   Firebase  │  │ External    │
-       │  Database   │  │ Auth/Storage│  │ APIs/Stripe │
-       └─────────────┘  └─────────────┘  └─────────────┘
-
+Browser
+  |
+  v
+React + Vite frontend (frontend/)
+  | HTTP / JSON; JWT bearer token for protected requests
+  v
+Node.js + Express REST API (backend/)
+  | SQL queries
+  v
+MySQL database (initialized from backend/schema.sql)
 ```
 
----
+The frontend displays and collects event information; the backend handles account authentication, authorization, and data access; MySQL stores persistent records. External payment, media, and notification integrations are future work, not dependencies of the current P2 demonstration.
 
-## Running the website
+## Run WHOZIN Locally (TA Setup)
 
-The website lives in `frontend/` (React + Vite). You need Node.js 20 or newer.
+> **The project is not automatically hosted by GitHub.** These instructions run it on your own computer. Keep the backend and frontend running in separate terminals.
+
+### Prerequisites
+
+- Git
+- Node.js and npm (Node.js 20 or newer recommended; use a version compatible with the project's Vite installation)
+- MySQL Server and a MySQL account with permission to create/import the project's schema
+
+### 1. Clone and install dependencies
 
 ```bash
-cd frontend
+git clone https://github.com/JINAL-1/Whozin.git
+cd Whozin
+
+cd backend
 npm install
-npm run dev     # start the site at http://localhost:5173
-npm test        # run the automated tests
-npm run lint    # check code style
-npm run build   # production build
+cd ../frontend
+npm install
+cd ..
 ```
 
-See `frontend/README.md` for the folder structure, routes and shared components.
+If the repository is private, the TA will need GitHub access before cloning.
 
----
+### 2. Initialize the MySQL database
 
-## Design and branding
+Start MySQL and import the database schema from `backend/schema.sql`. The script creates the `whozin` database if needed, selects it, and creates the `users` and `events` tables.
 
-- Logo files: `frontend/public/brand/` (wordmark, light wordmark, square mark) and `frontend/public/favicon.svg`
-- Colours, typography, spacing, logo rules and layout checks: [`docs/design-guidelines.md`](docs/design-guidelines.md)
+For example, from the repository root:
+
+```bash
+mysql -u root -p < backend/schema.sql
+```
+
+Enter your local MySQL password when prompted. Use `DB_NAME=whozin` in the backend configuration. The MySQL account needs permission to create the database and tables. Re-running the script will not overwrite existing tables, but it also will not migrate their structure.
+
+### 3. Configure backend environment variables
+
+Create `backend/.env` locally. The database variable names below are confirmed by `backend/src/db.js`. The JWT and port settings should be checked against the authentication and server files before the TA demonstration:
