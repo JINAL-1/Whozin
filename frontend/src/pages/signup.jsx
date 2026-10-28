@@ -1,5 +1,9 @@
+
 import { useState } from "react";
 import "../styles/Auth.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -7,10 +11,12 @@ function Signup() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "attendee",
   });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -19,7 +25,7 @@ function Signup() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
@@ -45,13 +51,68 @@ function Signup() {
       return;
     }
 
-    setSuccess("Form validated successfully!");
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            role: formData.role,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const fieldErrors = result.fields
+          ?.map((field) => field.message)
+          .join(", ");
+
+        throw new Error(
+          fieldErrors ||
+          result.error ||
+          "Unable to create account."
+        );
+      }
+
+      // The backend returns a JWT and the new user.
+      localStorage.setItem("token", result.token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(result.user)
+      );
+
+      setSuccess(
+        "Account created successfully! You can now log in."
+      );
+
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        role: "attendee",
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
         <h1 className="auth-logo">WHOZIN</h1>
+
         <p className="auth-subtitle">
           Discover events. Connect with people.
         </p>
@@ -59,8 +120,17 @@ function Signup() {
         <h2>Create Account</h2>
         <p>Join WHOZIN and start exploring events.</p>
 
-        {error && <p className="auth-error" role="alert">{error}</p>}
-        {success && <p className="auth-success" role="status">{success}</p>}
+        {error && (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        {success && (
+          <p className="auth-success" role="status">
+            {success}
+          </p>
+        )}
 
         <form onSubmit={handleSubmit}>
           <label htmlFor="name">Full Name</label>
@@ -97,7 +167,9 @@ function Signup() {
             required
           />
 
-          <label htmlFor="confirmPassword">Confirm Password</label>
+          <label htmlFor="confirmPassword">
+            Confirm Password
+          </label>
           <input
             id="confirmPassword"
             type="password"
@@ -108,8 +180,25 @@ function Signup() {
             required
           />
 
-          <button type="submit" className="auth-button">
-            Create Account
+          <label htmlFor="role">Account Type</label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+          >
+            <option value="attendee">Attendee</option>
+            <option value="organizer">Organizer</option>
+          </select>
+
+          <button
+            type="submit"
+            className="auth-button"
+            disabled={loading}
+          >
+            {loading
+              ? "Creating Account..."
+              : "Create Account"}
           </button>
         </form>
 

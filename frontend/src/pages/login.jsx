@@ -1,13 +1,19 @@
+
 import { useState } from "react";
 import "../styles/Auth.css";
 
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 function Login() {
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -16,17 +22,43 @@ function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    if (!formData.email.trim() || !formData.password) {
-      setError("Please fill in all fields.");
-      return;
+    try {
+      const response = await fetch(
+        `${API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to log in."
+        );
+      }
+
+      localStorage.setItem("token", result.token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(result.user)
+      );
+
+      window.location.assign("/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    // Backend authentication will be added later.
-    setError("Login is not connected to the server yet.");
   };
 
   return (
@@ -48,7 +80,9 @@ function Login() {
         )}
 
         <form onSubmit={handleSubmit}>
-          <label htmlFor="login-email">Email Address</label>
+          <label htmlFor="login-email">
+            Email Address
+          </label>
           <input
             id="login-email"
             type="email"
@@ -59,7 +93,9 @@ function Login() {
             required
           />
 
-          <label htmlFor="login-password">Password</label>
+          <label htmlFor="login-password">
+            Password
+          </label>
           <input
             id="login-password"
             type="password"
@@ -70,8 +106,12 @@ function Login() {
             required
           />
 
-          <button type="submit" className="auth-button">
-            Log In
+          <button
+            type="submit"
+            className="auth-button"
+            disabled={loading}
+          >
+            {loading ? "Logging In..." : "Log In"}
           </button>
         </form>
 

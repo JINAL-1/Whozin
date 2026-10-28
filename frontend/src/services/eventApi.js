@@ -46,6 +46,7 @@ function toSearchableEvent(eventData) {
   }
 }
 
+
 export async function createEvent(eventData) {
   if (DEMO_MODE) {
     const event = toSearchableEvent(eventData)
@@ -57,13 +58,34 @@ export async function createEvent(eventData) {
     }
   }
 
+  // Get the JWT saved when the organizer logged in.
+  const token = localStorage.getItem('token')
+
+  if (!token) {
+    throw new Error(
+      'You must log in as an organizer to create an event.'
+    )
+  }
+
+  // Translate the frontend fields into the backend format.
+  const payload = {
+    title: eventData.title,
+    description: eventData.description,
+    event_date: eventData.date,
+    event_time: eventData.time,
+    location: eventData.location,
+    image_url: eventData.image || null,
+    ticket_price: 0,
+    capacity: null,
+  }
+
   const response = await fetch(`${API_URL}/api/events`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
-    credentials: 'include',
-    body: JSON.stringify(eventData),
+    body: JSON.stringify(payload),
   })
 
   let result
@@ -75,29 +97,53 @@ export async function createEvent(eventData) {
   }
 
   if (!response.ok) {
-    throw new Error(result.message || 'Unable to publish event.')
+    const validationErrors = result.errors
+      ?.map((error) => error.msg)
+      .join(', ')
+
+    throw new Error(
+      validationErrors ||
+      result.error ||
+      result.message ||
+      'Unable to publish event.'
+    )
   }
 
   return {
     demo: false,
-    event: result.event || result,
+    event: {
+      ...eventData,
+      id: result.eventId,
+    },
   }
 }
 
-export async function searchEvents({ keyword = '', location = '' } = {}) {
+
+export async function searchEvents({
+  keyword = '',
+  location = '',
+} = {}) {
   if (DEMO_MODE) {
-    return filterEvents(getDemoEvents(), { keyword, location })
+    return filterEvents(getDemoEvents(), {
+      keyword,
+      location,
+    })
   }
 
   const params = new URLSearchParams()
-  if (keyword.trim()) params.set('q', keyword.trim())
-  if (location.trim()) params.set('location', location.trim())
+
+  if (keyword.trim()) {
+    params.set('keyword', keyword.trim())
+  }
+
+  if (location.trim()) {
+    params.set('location', location.trim())
+  }
 
   const query = params.toString()
-  const url = `${API_URL}/api/events/search${query ? `?${query}` : ''}`
-  const response = await fetch(url, {
-    credentials: 'include',
-  })
+  const url = `${API_URL}/api/events${query ? `?${query}` : ''}`
+
+  const response = await fetch(url)
 
   let result
 
@@ -108,11 +154,27 @@ export async function searchEvents({ keyword = '', location = '' } = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(result.message || 'Unable to search events.')
+    throw new Error(
+      result.error ||
+      result.message ||
+      'Unable to search events.'
+    )
   }
 
-  if (Array.isArray(result)) return result
-  if (Array.isArray(result.events)) return result.events
+  if (!Array.isArray(result.events)) {
+    throw new Error('The server returned an invalid event list.')
+  }
 
-  throw new Error('The server returned an invalid event list.')
+  // Convert backend events to the format EventCard expects.
+  return result.events.map((event) => {
+    const date = event.event_date.slice(0, 10)
+    const time = event.event_time.slice(0, 8)
+
+    return {
+      ...event,
+      startsAt: `${date}T${time}`,
+      category: 'Community',
+      price: Number(event.ticket_price),
+    }
+  })
 }
