@@ -1,6 +1,9 @@
+
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
+const authRoutes = require('./routes/auth');
+const eventRoutes = require('./routes/events');
 
 const app = express();
 
@@ -13,11 +16,16 @@ app.get('/api/health', async (req, res) => {
     await pool.query('SELECT 1');
     res.json({ status: 'ok', database: 'connected' });
   } catch (err) {
-    console.error('Database error:', err.message); // <-- the new line
+    console.error('Database error:', err.message);
     res.status(500).json({ status: 'error', database: 'unreachable' });
   }
 });
 
-// Auth and event routes will be mounted here in later steps
+// Authentication routes: register and login
+app.use('/api/auth', authRoutes);
+
+// Event routes: create and search events
+app.use('/api/events', eventRoutes);
 
 module.exports = app;
+
