@@ -103,3 +103,136 @@ Enter your local MySQL password when prompted. Use `DB_NAME=whozin` in the backe
 ### 3. Configure backend environment variables
 
 Create `backend/.env` locally. The database variable names below are confirmed by `backend/src/db.js`. The JWT and port settings should be checked against the authentication and server files before the TA demonstration:
+
+
+
+```dotenv
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_local_mysql_password
+DB_NAME=whozin
+JWT_SECRET=replace_with_a_long_random_secret  # verify variable name in auth code
+PORT=3001  # verify server configuration
+```
+
+`DB_SOCKET` is optional; leave it unset for a standard TCP connection. If MySQL requires a local socket, set `DB_SOCKET` to the socket path. Never commit `.env`, real database passwords, or JWT secrets. Each developer/TA should use their own local credentials.
+
+### 4. Configure frontend environment variables
+
+Create `frontend/.env.local`:
+
+```dotenv
+VITE_API_URL=http://localhost:3001
+VITE_DEMO_MODE=false
+```
+
+Setting demo mode to `false` makes the frontend use the Express API rather than locally stored sample events.
+
+### 5. Start the backend (Terminal 1)
+
+From the repository root:
+
+```bash
+cd backend
+npm start
+```
+
+The backend is expected at `http://localhost:3001`. Keep this terminal open.
+
+### 6. Start the frontend (Terminal 2)
+
+From the repository root, in a **new** terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open the local URL printed by Vite (typically `http://localhost:5173`, but it may use another port if that one is occupied).
+
+### 7. Verify the running application
+
+1. Open the frontend URL in your browser.
+2. Register an account with the **organizer** role.
+3. Log in with that account.
+4. Open **Create Event** and enter a title, description, date, time, and location.
+5. Submit the event and confirm the success message.
+6. Open **Search Events** and search for the event title or location.
+7. Confirm the newly created event appears. To inspect the API response directly, open `http://localhost:3001/api/events`.
+
+The demo uses a local database: events created on one teammate's computer will not automatically appear on another computer unless they share a database or import equivalent records.
+
+## Automated Tests and Build
+
+From the repository root:
+
+```bash
+cd frontend
+npm install
+npx vitest run
+npm run lint
+npm run build
+```
+
+During local integration verification on October 28, 2026, the frontend reported **39/39 passing tests across four test files**, with successful ESLint and Vite production build checks. Results should be rerun against the latest repository commit before the TA demonstration.
+
+| Test file | Passing tests in that run |
+|---|---:|
+| `CreateEvent.test.jsx` | 5 |
+| `components.test.jsx` | 13 |
+| `SearchEvents.test.jsx` | 8 |
+| `navigation.test.jsx` | 13 |
+
+**Testing scope:** Some frontend tests mock API responses and do not require a live MySQL database. The team also manually verified a real browser → Express API → MySQL → search workflow. Automated frontend tests should not be described as full end-to-end database tests.
+
+## API Overview (P2)
+
+| Method | Route | Purpose |
+|---|---|---|
+| `POST` | `/api/auth/register` | Register attendee or organizer |
+| `POST` | `/api/auth/login` | Log in and receive JWT |
+| `POST` | `/api/events` | Create event (organizer JWT required) |
+| `GET` | `/api/events` | Retrieve/search events; supports `keyword` and `location` query parameters |
+
+## P2 Demonstration Checklist
+
+- [ ] Start MySQL, backend, and frontend.
+- [ ] Demonstrate organizer registration and login.
+- [ ] Create an event and show its success confirmation.
+- [ ] Search for the event and show its card.
+- [ ] Show the corresponding event in the API response or database.
+- [ ] Run `npx vitest run` and explain the testing scope.
+- [ ] Show `npm run lint` and `npm run build` results.
+- [ ] Show GitHub commit history, pull requests, and team contributions.
+- [ ] Explain the architecture and the updated P2 product backlog.
+
+## Project Structure
+
+```text
+Whozin/
+├── backend/              # Express API, routes, database schema
+│   └── schema.sql
+├── frontend/             # React + Vite application
+│   └── src/
+│       ├── pages/
+│       ├── services/
+│       ├── components/
+│       └── tests/
+├── docs/                 # Project documentation and design guidelines
+└── README.md
+```
+
+See `frontend/README.md` for additional frontend information.
+
+## Design and Branding
+
+- Logo assets: `frontend/public/brand/` and `frontend/public/favicon.svg`.
+- Design guidelines: [`docs/design-guidelines.md`](docs/design-guidelines.md).
+
+## Version Control and Evaluation
+
+The project uses Git and GitHub for collaborative development. The TA may review the repository, branch/commit history, pull requests, implementation, automated tests, and a live local demonstration. The repository must remain accessible to the instructor and TAs.
+
+## Future Work
+
+The next iteration can expand event management, improve pricing and ticket functionality, add richer filtering and event details, strengthen backend/integration tests, and continue the broader social/event-discovery features described in P1.
