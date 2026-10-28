@@ -7,9 +7,8 @@ vi.mock("../services/eventApi", () => ({
   createEvent: vi.fn(),
 }));
 
-import CreateEvent, {
-  validateEvent,
-} from "../pages/CreateEvent";
+import CreateEvent from "../pages/CreateEvent";
+import { validateEvent } from "../utils/validateEvent";
 import { createEvent } from "../services/eventApi";
 
 describe("Create Event validation", () => {
