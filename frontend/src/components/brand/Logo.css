@@ -1,0 +1,8 @@
+.logo {
+  color: var(--color-ink);
+  overflow: visible;
+}
+
+.logo__pin {
+  fill: var(--color-brand);
+}

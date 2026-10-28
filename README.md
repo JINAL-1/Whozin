@@ -229,3 +229,28 @@ The proposed system will consist of several major components:
        │  Database   │  │ Auth/Storage│  │ APIs/Stripe │
        └─────────────┘  └─────────────┘  └─────────────┘
 
+```
+
+---
+
+## Running the website
+
+The website lives in `frontend/` (React + Vite). You need Node.js 20 or newer.
+
+```bash
+cd frontend
+npm install
+npm run dev     # start the site at http://localhost:5173
+npm test        # run the automated tests
+npm run lint    # check code style
+npm run build   # production build
+```
+
+See `frontend/README.md` for the folder structure, routes and shared components.
+
+---
+
+## Design and branding
+
+- Logo files: `frontend/public/brand/` (wordmark, light wordmark, square mark) and `frontend/public/favicon.svg`
+- Colours, typography, spacing, logo rules and layout checks: [`docs/design-guidelines.md`](docs/design-guidelines.md)
