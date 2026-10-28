@@ -1,7 +1,8 @@
+
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import SearchEvents from '../pages/SearchEvents.jsx'
 import { createEvent, searchEvents } from '../services/eventApi.js'
 import { filterEvents } from '../utils/filterEvents.js'
@@ -33,9 +34,66 @@ const events = [
   },
 ]
 
+// Events in the format returned by Pranav's backend.
+const backendEvents = [
+  {
+    id: 1,
+    title: 'Open mic night',
+    event_date: '2026-11-14T05:00:00.000Z',
+    event_time: '19:30:00',
+    location: 'Lakehead University, the Agora',
+    ticket_price: '0.00',
+  },
+  {
+    id: 2,
+    title: 'Waterfront night market',
+    event_date: '2026-11-07T05:00:00.000Z',
+    event_time: '17:00:00',
+    location: "Prince Arthur's Landing",
+    ticket_price: '0.00',
+  },
+  {
+    id: 3,
+    title: 'Community art fair',
+    event_date: '2026-11-20T05:00:00.000Z',
+    event_time: '13:00:00',
+    location: 'Lakehead University',
+    ticket_price: '5.00',
+  },
+]
+
+function mockResponse(data, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => data,
+  }
+}
 
 beforeEach(() => {
   localStorage.clear()
+
+  // Simulate API responses without needing MySQL running.
+  vi.stubGlobal('fetch', vi.fn(async (url) => {
+    const parsed = new URL(String(url), 'http://localhost:3001')
+    const keyword = (parsed.searchParams.get('keyword') || '').toLowerCase()
+    const location = (parsed.searchParams.get('location') || '').toLowerCase()
+
+    const matches = backendEvents.filter((event) => {
+      const matchesKeyword =
+        !keyword || event.title.toLowerCase().includes(keyword)
+      const matchesLocation =
+        !location || event.location.toLowerCase().includes(location)
+
+      return matchesKeyword && matchesLocation
+    })
+
+    return mockResponse({ events: matches })
+  }))
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })
 
 function renderSearch(path = '/search') {
@@ -69,7 +127,7 @@ describe('event filtering', () => {
 })
 
 describe('SearchEvents page', () => {
-  it('loads search terms from the URL and displays matching demo events', async () => {
+  it('loads search terms from the URL and displays matching API events', async () => {
     renderSearch('/search?q=market')
 
     expect(screen.getByLabelText('Keyword')).toHaveValue('market')
@@ -86,14 +144,14 @@ describe('SearchEvents page', () => {
     renderSearch('/search')
 
     await waitFor(() => {
-      expect(screen.getByText('6 events found')).toBeInTheDocument()
+      expect(screen.getByText('3 events found')).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText('Keyword'), 'craft')
+    await user.type(screen.getByLabelText('Keyword'), 'art')
     await user.click(screen.getByRole('button', { name: 'Search' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Holiday craft fair')).toBeInTheDocument()
+      expect(screen.getByText('Community art fair')).toBeInTheDocument()
     })
 
     expect(screen.getByText('1 event found')).toBeInTheDocument()
@@ -105,15 +163,58 @@ describe('SearchEvents page', () => {
     const results = screen.getByRole('region', { name: 'Search results' })
 
     await waitFor(() => {
-      expect(within(results).getByRole('heading', { name: 'No events found' })).toBeInTheDocument()
+      expect(
+        within(results).getByRole('heading', { name: 'No events found' })
+      ).toBeInTheDocument()
     })
 
-    expect(within(results).getByText('Try a different keyword or a broader location.')).toBeInTheDocument()
+    expect(
+      within(results).getByText(
+        'Try a different keyword or a broader location.'
+      )
+    ).toBeInTheDocument()
   })
 })
 
 describe('create and search integration', () => {
-  it('includes a newly created demo event in search results', async () => {
+  it('sends an organizer event to the API and retrieves it in search', async () => {
+    const createdEvent = {
+      id: 4,
+      title: 'Dean Test Concert',
+      event_date: '2099-11-14T05:00:00.000Z',
+      event_time: '19:00:00',
+      location: 'Lakehead University',
+      ticket_price: '0.00',
+    }
+
+    localStorage.setItem('token', 'test-organizer-token')
+
+    // Simulate POST creating an event and GET returning it.
+    vi.stubGlobal('fetch', vi.fn(async (url, options) => {
+      const parsed = new URL(String(url), 'http://localhost:3001')
+
+      if (options?.method === 'POST') {
+        expect(options.headers.Authorization).toBe(
+          'Bearer test-organizer-token'
+        )
+
+        const body = JSON.parse(options.body)
+        expect(body.event_date).toBe('2099-11-14')
+        expect(body.event_time).toBe('19:00')
+
+        return mockResponse({
+          message: 'Event created successfully',
+          eventId: 4,
+        }, 201)
+      }
+
+      if (parsed.pathname === '/api/events') {
+        return mockResponse({ events: [createdEvent] })
+      }
+
+      return mockResponse({ error: 'Not found' }, 404)
+    }))
+
     await createEvent({
       title: 'Dean Test Concert',
       description: 'A campus music event',
@@ -124,9 +225,13 @@ describe('create and search integration', () => {
       ticketType: 'free',
     })
 
-    const results = await searchEvents({ keyword: 'Dean Test', location: 'Lakehead' })
+    const results = await searchEvents({
+      keyword: 'Dean Test',
+      location: 'Lakehead',
+    })
 
-    expect(results.some((event) => event.title === 'Dean Test Concert')).toBe(true)
+    expect(
+      results.some((event) => event.title === 'Dean Test Concert')
+    ).toBe(true)
   })
 })
-
