@@ -6,8 +6,14 @@ export const ROUTES = {
   search: '/search',
   createEvent: '/events/new',
   myEvents: '/events/mine',
+  event: '/events/:id',
   login: '/login',
   signup: '/signup',
+}
+
+// Link to one event's page, e.g. eventPath(42) -> '/events/42'
+export function eventPath(id) {
+  return `/events/${encodeURIComponent(id)}`
 }
 
 export const MAIN_NAV = [

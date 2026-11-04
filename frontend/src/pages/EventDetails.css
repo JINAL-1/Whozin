@@ -1,0 +1,117 @@
+.event-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: calc(52rem + 2 * var(--gutter));
+  padding-block: var(--space-8) var(--space-16);
+}
+
+.event-details__back {
+  align-self: flex-start;
+  font-weight: 700;
+}
+
+.event-details__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+/* Same date stub as the event cards, at a larger size. */
+.event-details__date {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-strong);
+  line-height: 1;
+  text-align: center;
+}
+
+.event-details__month,
+.event-details__weekday {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.event-details__day {
+  margin-block: 0.15rem 0.3rem;
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.event-details__category {
+  margin-bottom: var(--space-1);
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.event-details h1 {
+  font-size: clamp(1.9rem, 3vw + 1rem, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.event-details__facts {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-6);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.event-details__facts div {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: var(--space-4);
+}
+
+.event-details__facts dt {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.event-details__facts dd {
+  margin: 0;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.event-details__description {
+  max-width: 40rem;
+  font-size: var(--text-lg);
+  white-space: pre-line;
+}
+
+@media (max-width: 480px) {
+  .event-details__header {
+    gap: var(--space-4);
+  }
+
+  .event-details__date {
+    width: 4.75rem;
+  }
+
+  .event-details__day {
+    font-size: 2.25rem;
+  }
+
+  .event-details__facts {
+    padding: var(--space-4);
+  }
+
+  .event-details__facts div {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+}
