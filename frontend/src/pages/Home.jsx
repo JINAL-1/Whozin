@@ -4,7 +4,7 @@ import EventCard from '../components/events/EventCard.jsx'
 import Button from '../components/ui/Button.jsx'
 import FormField from '../components/ui/FormField.jsx'
 import { sampleEvents } from '../data/sampleEvents.js'
-import { ROUTES } from '../routes.js'
+import { ROUTES, eventPath } from '../routes.js'
 import './Home.css'
 
 const heroEvents = sampleEvents.slice(0, 2)
@@ -77,7 +77,7 @@ function Home() {
           <ul className="event-grid">
             {upcomingEvents.map((event) => (
               <li key={event.id}>
-                <EventCard event={event} />
+                <EventCard event={event} to={eventPath(event.id)} />
               </li>
             ))}
           </ul>
