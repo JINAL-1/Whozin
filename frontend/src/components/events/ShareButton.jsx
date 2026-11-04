@@ -50,12 +50,14 @@ function ShareButton({ url }) {
 
   return (
     <div className="share">
-      <Button variant="secondary" onClick={handleCopy}>
-        Copy link
-      </Button>
-      <p className="share__status" role="status">
-        {status === 'copied' ? 'Link copied' : ''}
-      </p>
+      <div className="share__row">
+        <Button variant="secondary" onClick={handleCopy}>
+          Copy link
+        </Button>
+        <p className="share__status" role="status">
+          {status === 'copied' ? 'Link copied' : ''}
+        </p>
+      </div>
       {status === 'failed' && (
         <FormField
           className="share__fallback"
