@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import ShareButton from '../components/events/ShareButton.jsx'
 import Button from '../components/ui/Button.jsx'
-import { ROUTES } from '../routes.js'
+import { ROUTES, eventPath } from '../routes.js'
 import { getEventById } from '../services/getEvent.js'
 import { formatPrice, getDateParts } from '../utils/formatEvent.js'
 import './EventDetails.css'
@@ -78,6 +79,7 @@ function EventDetails() {
   const { event } = result
   const date = getDateParts(event.startsAt)
   const priceLabel = formatPrice(event.price)
+  const shareUrl = new URL(eventPath(event.id), window.location.origin).href
 
   return (
     <article className="event-details container" aria-labelledby="event-title">
@@ -117,6 +119,11 @@ function EventDetails() {
       {event.description && (
         <p className="event-details__description">{event.description}</p>
       )}
+
+      <section className="event-details__share" aria-labelledby="share-title">
+        <h2 id="share-title">Share this event</h2>
+        <ShareButton url={shareUrl} />
+      </section>
     </article>
   )
 }

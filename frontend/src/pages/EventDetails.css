@@ -93,6 +93,18 @@
   white-space: pre-line;
 }
 
+.event-details__share {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-line);
+}
+
+.event-details__share h2 {
+  font-size: var(--text-lg);
+}
+
 @media (max-width: 480px) {
   .event-details__header {
     gap: var(--space-4);
