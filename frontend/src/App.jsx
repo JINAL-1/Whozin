@@ -1,6 +1,8 @@
+
 import { Route, Routes } from 'react-router'
 import Layout from './components/layout/Layout.jsx'
 import CreateEvent from './pages/CreateEvent.jsx'
+import MyEvents from './pages/MyEvents.jsx'
 import Home from './pages/Home.jsx'
 import Login from './pages/login.jsx'
 import NotFound from './pages/NotFound.jsx'
@@ -15,6 +17,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path={ROUTES.search} element={<SearchEvents />} />
         <Route path={ROUTES.createEvent} element={<CreateEvent />} />
+        <Route path={ROUTES.myEvents} element={<MyEvents />} />
         <Route path={ROUTES.login} element={<Login />} />
         <Route path={ROUTES.signup} element={<Signup />} />
         <Route path="*" element={<NotFound />} />
