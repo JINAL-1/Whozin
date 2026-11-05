@@ -178,3 +178,55 @@ export async function searchEvents({
     }
   })
 }
+
+// Request helper for organizer event management
+async function organizerRequest(path, options = {}) {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    throw new Error('Please log in as an organizer first.');
+  }
+
+  const response = await fetch(`${API_URL}/api/events${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Unable to complete request.');
+  }
+
+  return result;
+}
+
+export async function getMyEvents() {
+  return (await organizerRequest('/mine')).events;
+}
+
+export async function updateEvent(id, form) {
+  return organizerRequest(`/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      title: form.title,
+      description: form.description,
+      event_date: form.date,
+      event_time: form.time,
+      location: form.location,
+      image_url: form.image || null,
+      ticket_price: 0,
+      capacity: null,
+    }),
+  });
+}
+
+export async function cancelEvent(id) {
+  return organizerRequest(`/${id}/cancel`, {
+    method: 'PATCH',
+  });
+}
