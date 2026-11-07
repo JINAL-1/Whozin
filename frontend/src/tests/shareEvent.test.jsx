@@ -69,6 +69,18 @@ describe('event page', () => {
     expect(screen.getByText('Bring snacks.')).toBeInTheDocument()
   })
 
+  it('still shows the event when its date is missing', async () => {
+    localStorage.setItem(
+      'whozin-demo-events',
+      JSON.stringify([{ id: 'demo-1', title: 'Pop-up show', startsAt: 'not a date', location: 'Thunder Bay' }]),
+    )
+
+    renderApp('/events/demo-1')
+
+    expect(await eventHeading('Pop-up show')).toBeInTheDocument()
+    expect(screen.getByText('Date to be announced')).toBeInTheDocument()
+  })
+
   it('shows a not found message for an unknown event', async () => {
     renderApp('/events/does-not-exist')
 
@@ -143,6 +155,12 @@ describe('links to the event page', () => {
 
     expect(screen.getByTestId('location')).toHaveTextContent('/events/sample-1')
     expect(await eventHeading('Waterfront night market')).toBeInTheDocument()
+  })
+
+  it('keeps My events and Create event on their own pages', async () => {
+    renderApp('/events/new')
+    expect(await screen.findByRole('heading', { name: 'Create an Event' })).toBeInTheDocument()
+    expect(screen.queryByText('Event not found')).not.toBeInTheDocument()
   })
 
   it('opens an event from the homepage', async () => {

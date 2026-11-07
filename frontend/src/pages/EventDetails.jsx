@@ -77,7 +77,8 @@ function EventDetails() {
   }
 
   const { event } = result
-  const date = getDateParts(event.startsAt)
+  const hasDate = !Number.isNaN(new Date(event.startsAt).getTime())
+  const date = hasDate ? getDateParts(event.startsAt) : null
   const priceLabel = formatPrice(event.price)
   const shareUrl = new URL(eventPath(event.id), window.location.origin).href
 
@@ -88,11 +89,13 @@ function EventDetails() {
       </Link>
 
       <header className="event-details__header">
-        <time className="event-details__date" dateTime={event.startsAt}>
-          <span className="event-details__month">{date.month}</span>
-          <span className="event-details__day">{date.day}</span>
-          <span className="event-details__weekday">{date.weekday}</span>
-        </time>
+        {date && (
+          <time className="event-details__date" dateTime={event.startsAt}>
+            <span className="event-details__month">{date.month}</span>
+            <span className="event-details__day">{date.day}</span>
+            <span className="event-details__weekday">{date.weekday}</span>
+          </time>
+        )}
         <div>
           {event.category && <p className="event-details__category">{event.category}</p>}
           <h1 id="event-title">{event.title}</h1>
@@ -102,7 +105,7 @@ function EventDetails() {
       <dl className="event-details__facts">
         <div>
           <dt>When</dt>
-          <dd>{date.full}</dd>
+          <dd>{date ? date.full : 'Date to be announced'}</dd>
         </div>
         <div>
           <dt>Where</dt>
