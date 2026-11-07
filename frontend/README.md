@@ -49,6 +49,7 @@ public/
 | `/` | Home | Done |
 | `/search` | Search events (US-05) | Done |
 | `/events/new` | Create event (US-02) | Done |
+| `/events/mine` | My events: edit or cancel your events (US-03) | Done |
 | `/events/:id` | Event details, with a Copy link button for sharing (US-10) | Done |
 | `/login` | Log in (US-01) | Done |
 | `/signup` | Sign up (US-01) | Done |
@@ -125,4 +126,4 @@ Design rules and manual layout checks are in `../docs/design-guidelines.md`.
 
 - The homepage shows sample events from `src/data/sampleEvents.js` until the events API is ready.
 - The event page loads the event from the search list. A dedicated `GET /api/events/:id` endpoint would be faster once there are many events, and would let a shared link to a cancelled event say it was cancelled instead of "Event not found".
-- When the site is deployed, the host must send every page path to `index.html`, or a shared `/events/<id>` link will show the host's own 404 page.
+- `vercel.json` sends every page path to `index.html` on Vercel, so a shared `/events/<id>` link or a page refresh opens the right page. Other hosts need the same rule, or they show their own 404 page.
