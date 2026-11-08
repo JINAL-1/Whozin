@@ -63,7 +63,7 @@ To plug in a page, import it in `App.jsx` and replace the matching `<ComingSoon 
 
 Every page is wrapped in `Layout`, so it gets the navbar and footer automatically. Use `ROUTES` from `routes.js` for links instead of typing paths. To link to one event, use `eventPath(event.id)`, for example `<EventCard event={event} to={eventPath(event.id)} />`.
 
-The event page finds the event with `getEventById(id)` in `services/getEvent.js`. It uses the same list as search, so in demo mode an event created in one browser can only be opened in that browser. With the backend running, a shared link works on any device.
+The event page finds the event with `getEventById(id)` in `services/getEvent.js`. The homepage's sample events open straight from the app. Other events come from the same list as search, so in demo mode an event created in one browser can only be opened in that browser; with the backend (`VITE_DEMO_MODE=false`), a shared link works on any device.
 
 The homepage search sends people to `/search?q=<keyword>&location=<place>`. The search page can read these with `useSearchParams()` from `react-router`.
 
@@ -118,7 +118,7 @@ Dates are always shown in Thunder Bay time (America/Toronto). If the API uses di
 
 ## Tests
 
-Tests live in `src/tests/`. `navigation.test.jsx` covers routing, the navbar, the mobile menu and the homepage search; `components.test.jsx` covers Button, FormField, EventCard, the formatters and the logo; `CreateEvent.test.jsx` covers the create event form; `SearchEvents.test.jsx` covers search; `shareEvent.test.jsx` covers the event page and the share link. Add new test files as `*.test.jsx`; the jsdom environment and jest-dom matchers are already set up.
+Tests live in `src/tests/`. `navigation.test.jsx` covers routing, the navbar, the mobile menu and the homepage search; `components.test.jsx` covers Button, FormField, EventCard, the formatters and the logo; `CreateEvent.test.jsx` covers the create event form; `SearchEvents.test.jsx` covers search; `shareEvent.test.jsx` covers the event page and the share link. The share tests replace the event list themselves, so they pass in demo mode and with `VITE_DEMO_MODE=false`. Add new test files as `*.test.jsx`; the jsdom environment and jest-dom matchers are already set up.
 
 Design rules and manual layout checks are in `../docs/design-guidelines.md`.
 

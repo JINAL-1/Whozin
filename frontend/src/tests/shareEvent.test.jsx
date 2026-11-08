@@ -3,25 +3,27 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.jsx'
-import { eventPath } from '../routes.js'
-import { createEvent } from '../services/eventApi.js'
+import { sampleEvents } from '../data/sampleEvents.js'
 
-// Lets a test make the next event load fail, to check the error message.
-const loadFailure = vi.hoisted(() => ({ active: false }))
+// The event list the app sees. Replacing searchEvents keeps these tests the
+// same whether VITE_DEMO_MODE is on or off and whether the backend is running.
+const api = vi.hoisted(() => ({ events: [], fail: false }))
 
-vi.mock('../services/getEvent.js', async (importOriginal) => {
-  const actual = await importOriginal()
+vi.mock('../services/eventApi.js', async (importOriginal) => {
+  const { filterEvents } = await import('../utils/filterEvents.js')
+
   return {
-    getEventById: async (id) => {
-      if (loadFailure.active) throw new Error('The server is not responding.')
-      return actual.getEventById(id)
+    ...(await importOriginal()),
+    searchEvents: async ({ keyword = '', location = '' } = {}) => {
+      if (api.fail) throw new Error('The server is not responding.')
+      return filterEvents(api.events, { keyword, location })
     },
   }
 })
 
 function LocationProbe() {
   const location = useLocation()
-  return <output data-testid="location">{location.pathname}</output>
+  return <div data-testid="location">{location.pathname}</div>
 }
 
 function renderApp(path) {
@@ -34,10 +36,21 @@ function renderApp(path) {
 }
 
 const eventHeading = (name) => screen.findByRole('heading', { level: 1, name })
+const shareStatus = () => within(screen.getByRole('main')).getByRole('status')
+
+const savedEvent = {
+  id: 42,
+  title: 'Test party',
+  description: 'Bring snacks.',
+  startsAt: '2026-12-02T00:00:00Z',
+  location: 'Thunder Bay',
+  category: 'Community',
+  price: 0,
+}
 
 beforeEach(() => {
-  localStorage.clear()
-  loadFailure.active = false
+  api.events = [...sampleEvents, savedEvent]
+  api.fail = false
 })
 
 afterEach(() => {
@@ -53,29 +66,23 @@ describe('event page', () => {
     expect(screen.getByText('Free')).toBeInTheDocument()
   })
 
-  it('shows an event created in the app', async () => {
-    const { event } = await createEvent({
-      title: 'Test party',
-      description: 'Bring snacks.',
-      date: '2026-12-01',
-      time: '19:00',
-      location: 'Thunder Bay',
-      ticketType: 'free',
-    })
-
-    renderApp(eventPath(event.id))
+  it('shows an event that was created in the app', async () => {
+    renderApp('/events/42')
 
     expect(await eventHeading('Test party')).toBeInTheDocument()
     expect(screen.getByText('Bring snacks.')).toBeInTheDocument()
   })
 
-  it('still shows the event when its date is missing', async () => {
-    localStorage.setItem(
-      'whozin-demo-events',
-      JSON.stringify([{ id: 'demo-1', title: 'Pop-up show', startsAt: 'not a date', location: 'Thunder Bay' }]),
-    )
+  it('opens the sample events even when the server is down', async () => {
+    api.fail = true
+    renderApp('/events/sample-3')
 
-    renderApp('/events/demo-1')
+    expect(await eventHeading('Winter gear swap')).toBeInTheDocument()
+  })
+
+  it('still shows the event when its date is missing', async () => {
+    api.events = [{ id: 7, title: 'Pop-up show', startsAt: 'not a date', location: 'Thunder Bay' }]
+    renderApp('/events/7')
 
     expect(await eventHeading('Pop-up show')).toBeInTheDocument()
     expect(screen.getByText('Date to be announced')).toBeInTheDocument()
@@ -93,16 +100,16 @@ describe('event page', () => {
 
   it('shows an error and loads the event again with Try again', async () => {
     const user = userEvent.setup()
-    loadFailure.active = true
-    renderApp('/events/sample-1')
+    api.fail = true
+    renderApp('/events/42')
 
     expect(await screen.findByRole('heading', { name: 'We could not load this event' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('The server is not responding.')
 
-    loadFailure.active = false
+    api.fail = false
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
-    expect(await eventHeading('Waterfront night market')).toBeInTheDocument()
+    expect(await eventHeading('Test party')).toBeInTheDocument()
   })
 })
 
@@ -114,21 +121,21 @@ describe('share link', () => {
 
     await user.click(screen.getByRole('button', { name: 'Copy link' }))
 
-    expect(screen.getByRole('status')).toHaveTextContent('Link copied')
+    expect(shareStatus()).toHaveTextContent('Link copied')
     expect(await navigator.clipboard.readText()).toBe(`${window.location.origin}/events/sample-2`)
   })
 
   it('opens the same event when the copied link is opened in a new tab', async () => {
     const user = userEvent.setup()
-    const firstTab = renderApp('/events/sample-3')
-    await eventHeading('Winter gear swap')
+    const firstTab = renderApp('/events/42')
+    await eventHeading('Test party')
     await user.click(screen.getByRole('button', { name: 'Copy link' }))
     const copiedLink = new URL(await navigator.clipboard.readText())
     firstTab.unmount()
 
     renderApp(copiedLink.pathname)
 
-    expect(await eventHeading('Winter gear swap')).toBeInTheDocument()
+    expect(await eventHeading('Test party')).toBeInTheDocument()
   })
 
   it('shows the link to copy by hand when the browser blocks copying', async () => {
@@ -142,23 +149,24 @@ describe('share link', () => {
     expect(screen.getByLabelText('Copy this link')).toHaveValue(
       `${window.location.origin}/events/sample-1`,
     )
-    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+    expect(shareStatus()).toBeEmptyDOMElement()
   })
 })
 
 describe('links to the event page', () => {
   it('opens an event from the search results', async () => {
     const user = userEvent.setup()
-    renderApp('/search?q=market')
+    renderApp('/search?q=party')
 
-    await user.click(await screen.findByRole('link', { name: 'Waterfront night market' }))
+    await user.click(await screen.findByRole('link', { name: 'Test party' }))
 
-    expect(screen.getByTestId('location')).toHaveTextContent('/events/sample-1')
-    expect(await eventHeading('Waterfront night market')).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent('/events/42')
+    expect(await eventHeading('Test party')).toBeInTheDocument()
   })
 
-  it('keeps My events and Create event on their own pages', async () => {
+  it('keeps Create event on its own page', async () => {
     renderApp('/events/new')
+
     expect(await screen.findByRole('heading', { name: 'Create an Event' })).toBeInTheDocument()
     expect(screen.queryByText('Event not found')).not.toBeInTheDocument()
   })
