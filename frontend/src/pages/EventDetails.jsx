@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import ShareButton from '../components/events/ShareButton.jsx'
+import ShareLinks from '../components/events/ShareLinks.jsx'
 import Button from '../components/ui/Button.jsx'
 import { ROUTES, eventPath } from '../routes.js'
 import { getEventById } from '../services/getEvent.js'
@@ -126,6 +127,7 @@ function EventDetails() {
       <section className="event-details__share" aria-labelledby="share-title">
         <h2 id="share-title">Share this event</h2>
         <ShareButton url={shareUrl} />
+        <ShareLinks title={event.title} url={shareUrl} />
       </section>
     </article>
   )
