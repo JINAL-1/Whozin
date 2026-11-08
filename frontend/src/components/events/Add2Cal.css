@@ -1,0 +1,31 @@
+
+.add2cal-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  
+    padding: 0.6rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+  
+    background-color: #ffffff;
+    color: #1f2937;
+  
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+  
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .add2cal-button:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .add2cal-button:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+  

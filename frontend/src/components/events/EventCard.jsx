@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { formatPrice, getDateParts } from '../../utils/formatEvent.js'
+import Add2Cal from './Add2Cal.jsx'
 import './EventCard.css'
 
 // event: { id, title, startsAt (ISO date string), location, category?, price? }
@@ -37,6 +38,11 @@ function EventCard({ event, to, headingLevel = 3, className = '' }) {
               {priceLabel}
             </p>
           )}
+
+          <div className="event-card__actions">
+            <Add2Cal event={event} />
+
+          </div>
         </div>
       </div>
     </article>

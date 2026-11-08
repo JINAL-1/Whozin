@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import ShareButton from '../components/events/ShareButton.jsx'
 import ShareLinks from '../components/events/ShareLinks.jsx'
+import Add2Cal from '../components/events/Add2Cal.jsx'
 import Button from '../components/ui/Button.jsx'
 import { ROUTES, eventPath } from '../routes.js'
 import { getEventById } from '../services/getEvent.js'
@@ -123,6 +124,11 @@ function EventDetails() {
       {event.description && (
         <p className="event-details__description">{event.description}</p>
       )}
+
+      <section className="event-details__calendar" aria-labelledby="calendar-title">
+        <h2 id="calendar-title">Save this event</h2>
+        <Add2Cal event={event} />
+      </section>
 
       <section className="event-details__share" aria-labelledby="share-title">
         <h2 id="share-title">Share this event</h2>
