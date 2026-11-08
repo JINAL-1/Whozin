@@ -157,6 +157,46 @@ describe('SearchEvents page', () => {
     expect(screen.getByText('1 event found')).toBeInTheDocument()
   })
 
+  it('shows a loading message while the server response is pending', async () => {
+    let resolveRequest
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise((resolve) => {
+            resolveRequest = resolve
+          }),
+      ),
+    )
+
+    renderSearch('/search?q=market')
+
+    expect(screen.getByText('Loading events...')).toBeInTheDocument()
+
+    resolveRequest(mockResponse({ events: [backendEvents[1]] }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Waterfront night market')).toBeInTheDocument()
+    })
+  })
+
+  it('shows a server error message when the search request fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        mockResponse({ error: 'Could not retrieve events' }, 500),
+      ),
+    )
+
+    renderSearch('/search?q=market')
+
+    expect(
+      await screen.findByRole('heading', { name: 'We could not load events' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Could not retrieve events')).toBeInTheDocument()
+  })
+
   it('shows a no-results message', async () => {
     renderSearch('/search?q=not-a-real-event')
 
