@@ -2,7 +2,7 @@ import { sampleEvents } from '../data/sampleEvents.js'
 import { filterEvents } from '../utils/filterEvents.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false'
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true'
 const DEMO_STORAGE_KEY = 'whozin-demo-events'
 
 function getDemoEvents() {
