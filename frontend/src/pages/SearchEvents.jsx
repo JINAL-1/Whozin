@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import EventCard from '../components/events/EventCard.jsx'
 import Button from '../components/ui/Button.jsx'
 import FormField from '../components/ui/FormField.jsx'
+import { eventPath } from '../routes.js'
 import { searchEvents } from '../services/eventApi.js'
 import './SearchEvents.css'
 
@@ -119,7 +120,7 @@ function SearchEvents() {
             <ul className="search-results__grid">
               {events.map((event) => (
                 <li key={event.id}>
-                  <EventCard event={event} />
+                  <EventCard event={event} to={eventPath(event.id)} />
                 </li>
               ))}
             </ul>

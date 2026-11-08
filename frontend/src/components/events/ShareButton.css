@@ -1,0 +1,21 @@
+.share {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.share__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.share__status {
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.share__fallback {
+  max-width: 36rem;
+}

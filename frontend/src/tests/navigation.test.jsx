@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -33,9 +33,12 @@ describe('routing', () => {
     ['/events/new', 'Create an Event'],
     ['/login', 'Welcome Back!'],
     ['/signup', 'Create Account'],
-  ])('renders the page for %s', (path, heading) => {
+    ['/events/sample-1', 'Waterfront night market'],
+  ])('renders the page for %s', async (path, heading) => {
     renderApp(path)
-    expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+    // Let pages that load data finish before the test ends.
+    await waitFor(() => expect(screen.queryByText(/^Loading/)).not.toBeInTheDocument())
   })
 
   it('shows a not found page for unknown paths', () => {
