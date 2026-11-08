@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.jsx'
 import { sampleEvents } from '../data/sampleEvents.js'
+import { getShareLinks } from '../utils/shareLinks.js'
 
 // The event list the app sees. Replacing searchEvents keeps these tests the
 // same whether VITE_DEMO_MODE is on or off and whether the backend is running.
@@ -179,5 +180,74 @@ describe('links to the event page', () => {
 
     expect(screen.getByTestId('location')).toHaveTextContent('/events/sample-3')
     expect(await eventHeading('Winter gear swap')).toBeInTheDocument()
+  })
+})
+
+describe('share to other apps', () => {
+  it('builds email, WhatsApp, Facebook and X links that include the event link', () => {
+    const url = 'https://whozin.example/events/42'
+    const links = Object.fromEntries(
+      getShareLinks({ title: 'Test party', url }).map((link) => [link.name, link.href]),
+    )
+
+    expect(links.Email).toBe(
+      'mailto:?subject=Test%20party&body=Check%20out%20Test%20party%20on%20Whozin%3A%20https%3A%2F%2Fwhozin.example%2Fevents%2F42',
+    )
+    expect(links.WhatsApp).toBe(
+      `https://wa.me/?text=${encodeURIComponent(`Check out Test party on Whozin: ${url}`)}`,
+    )
+    expect(links.Facebook).toBe(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`)
+    expect(links.X).toBe(
+      `https://x.com/intent/tweet?text=${encodeURIComponent('Check out Test party on Whozin')}&url=${encodeURIComponent(url)}`,
+    )
+  })
+
+  it('shows the share options on the event page', async () => {
+    renderApp('/events/42')
+    await eventHeading('Test party')
+    const options = screen.getByRole('list', { name: 'Or share to' })
+    const eventLink = `${window.location.origin}/events/42`
+
+    const whatsapp = within(options).getByRole('link', { name: /WhatsApp/ })
+    expect(whatsapp).toHaveAttribute('target', '_blank')
+    expect(whatsapp).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(decodeURIComponent(whatsapp.getAttribute('href'))).toContain(eventLink)
+
+    const email = within(options).getByRole('link', { name: 'Email' })
+    expect(email.getAttribute('href')).toMatch(/^mailto:/)
+    expect(decodeURIComponent(email.getAttribute('href'))).toContain(eventLink)
+
+    expect(within(options).getByRole('link', { name: /Facebook/ })).toBeInTheDocument()
+    expect(within(options).getByRole('link', { name: /^X/ })).toBeInTheDocument()
+  })
+
+  it('hides More options when the browser has no share menu', async () => {
+    renderApp('/events/42')
+    await eventHeading('Test party')
+
+    expect(screen.queryByRole('button', { name: 'More options' })).not.toBeInTheDocument()
+  })
+
+  it('opens the device share menu where the browser supports it', async () => {
+    const user = userEvent.setup()
+    const share = vi.fn().mockRejectedValue(new DOMException('Share cancelled', 'AbortError'))
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true })
+
+    try {
+      renderApp('/events/42')
+      await eventHeading('Test party')
+
+      await user.click(screen.getByRole('button', { name: 'More options' }))
+
+      expect(share).toHaveBeenCalledWith({
+        title: 'Test party',
+        text: 'Check out Test party on Whozin',
+        url: `${window.location.origin}/events/42`,
+      })
+      // Closing the menu without sharing leaves the page as it was.
+      expect(screen.getByRole('heading', { level: 1, name: 'Test party' })).toBeInTheDocument()
+    } finally {
+      delete navigator.share
+    }
   })
 })

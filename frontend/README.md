@@ -50,7 +50,7 @@ public/
 | `/search` | Search events (US-05) | Done |
 | `/events/new` | Create event (US-02) | Done |
 | `/events/mine` | My events: edit or cancel your events (US-03) | Done |
-| `/events/:id` | Event details, with a Copy link button for sharing (US-10) | Done |
+| `/events/:id` | Event details, with Copy link and share to email, WhatsApp, Facebook and X (US-10) | Done |
 | `/login` | Log in (US-01) | Done |
 | `/signup` | Sign up (US-01) | Done |
 | anything else | Page not found | Done |
@@ -114,6 +114,12 @@ Dates are always shown in Thunder Bay time (America/Toronto). If the API uses di
 
 ```jsx
 <ShareButton url={new URL(eventPath(event.id), window.location.origin).href} />
+```
+
+**ShareLinks**: Email, WhatsApp, Facebook and X buttons that open those apps with the event link filled in. Where the browser has a share menu (mostly phones), it also shows **More options**, which opens the device's own share menu. The links are built by `getShareLinks({ title, url })` in `utils/shareLinks.js`.
+
+```jsx
+<ShareLinks title={event.title} url={shareUrl} />
 ```
 
 ## Tests
