@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import ShareButton from '../components/events/ShareButton.jsx'
@@ -6,6 +7,8 @@ import Add2Cal from '../components/events/Add2Cal.jsx'
 import Button from '../components/ui/Button.jsx'
 import { ROUTES, eventPath } from '../routes.js'
 import { getEventById } from '../services/getEvent.js'
+import { sampleEvents } from '../data/sampleEvents.js'
+import { registerForEvent } from '../services/registerEvent.js'
 import { formatPrice, getDateParts } from '../utils/formatEvent.js'
 import './EventDetails.css'
 import './StatusPage.css'
@@ -14,6 +17,12 @@ function EventDetails() {
   const { id } = useParams()
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState({ key: null, event: null, error: '' })
+
+  // US-06: Registration states
+  const [registering, setRegistering] = useState(false)
+  const [registrationMessage, setRegistrationMessage] = useState('')
+  const [registrationError, setRegistrationError] = useState('')
+  const [registeredEventId, setRegisteredEventId] = useState(null)
 
   // A new key on each load (or retry), so the page knows when it is still loading.
   const requestKey = `${id}:${attempt}`
@@ -39,6 +48,49 @@ function EventDetails() {
       active = false
     }
   }, [id, requestKey])
+
+  // US-06: Register attendee for a free event
+  const handleRegistration = async () => {
+    if (registering || String(registeredEventId) === String(id)) return
+
+    setRegistrationError('')
+    setRegistrationMessage('')
+
+    if (!localStorage.getItem('token')) {
+      setRegistrationError('Please log in to register for this event.')
+      return
+    }
+
+    let user = null
+
+    try {
+      user = JSON.parse(localStorage.getItem('user') || 'null')
+    } catch {
+      user = null
+    }
+
+    if (user?.role !== 'attendee') {
+      setRegistrationError('Only attendees can register for events.')
+      return
+    }
+
+    setRegistering(true)
+
+    try {
+      const response = await registerForEvent(id)
+
+      setRegisteredEventId(id)
+      setRegistrationMessage(
+        response.message || 'Registration successful!'
+      )
+    } catch (error) {
+      setRegistrationError(
+        error.message || 'Registration failed. Please try again.'
+      )
+    } finally {
+      setRegistering(false)
+    }
+  }
 
   if (result.key !== requestKey) {
     return (
@@ -84,6 +136,24 @@ function EventDetails() {
   const priceLabel = formatPrice(event.price)
   const shareUrl = new URL(eventPath(event.id), window.location.origin).href
 
+  // US-06: Check event eligibility
+  const isFreeEvent =
+    event.price !== null &&
+    event.price !== undefined &&
+    event.price !== '' &&
+    Number(event.price) === 0
+
+  const isBackendEvent =
+    !String(event.id).startsWith('demo-') &&
+    !sampleEvents.some(
+      (sample) => String(sample.id) === String(event.id)
+    )
+
+  const canRegister =
+    isBackendEvent &&
+    isFreeEvent &&
+    event.status === 'published'
+
   return (
     <article className="event-details container" aria-labelledby="event-title">
       <Link to={ROUTES.search} className="event-details__back">
@@ -123,6 +193,35 @@ function EventDetails() {
 
       {event.description && (
         <p className="event-details__description">{event.description}</p>
+      )}
+
+      {/* US-06: Free Event Registration */}
+      {canRegister && (
+        <section
+          className="event-details__registration"
+          aria-labelledby="registration-title"
+        >
+          <h2 id="registration-title">Event Registration</h2>
+
+          <Button
+            onClick={handleRegistration}
+            disabled={registering || String(registeredEventId) === String(id)}
+          >
+            {registering
+              ? 'Registering...'
+              : String(registeredEventId) === String(id)
+                ? 'Registered'
+                : 'Register for Free'}
+          </Button>
+
+          {registrationMessage && (
+            <p role="status">{registrationMessage}</p>
+          )}
+
+          {registrationError && (
+            <p role="alert">{registrationError}</p>
+          )}
+        </section>
       )}
 
       <section className="event-details__calendar" aria-labelledby="calendar-title">
