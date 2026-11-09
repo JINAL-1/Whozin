@@ -70,21 +70,10 @@ The status column below follows the team's submitted P3 report. "Completed" for 
 
 ### Current Architecture
 
-```text
-Browser (desktop or mobile)
-          |
-          v
-React + Vite frontend — Vercel
-          | HTTPS / JSON; JWT bearer token on protected requests
-          v
-Node.js + Express REST API — Render
-          | SQL queries / database results
-          v
-MySQL database — Aiven
-  ├── users
-  ├── events
-  └── registrations
-```
+The following diagram illustrates WHOZIN's three-tier architecture
+and its production deployment infrastructure.
+
+![WHOZIN P3 Architecture Diagram](docs/images/architecture-p3.png)
 
 The frontend manages the user interface, including external share links and `.ics` generation. The backend validates protected actions and reads/writes persistent data. The P3 iteration introduced an individual event details route (`/events/:id`) used by sharing, calendar integration, and free registration. The registration schema links attendees and events and enforces uniqueness for each attendee/event pair.
 
@@ -228,20 +217,6 @@ The following routes are documented from the team's implemented functionality. R
 
 **Important:** `/events/:id` is a **frontend page route**. A dedicated backend `GET /api/events/:id` endpoint is planned for a future iteration; the P3 event details page currently retrieves an event through the existing event-list/search service.
 
-## P3 Demonstration Checklist
-
-- [ ] Open the [public WHOZIN site](https://whozin-navy.vercel.app/) and allow for possible Render cold-start delay.
-- [ ] Demonstrate attendee and organizer login.
-- [ ] Create an event, then edit and cancel test events as an organizer.
-- [ ] Search by keyword, location, and both filters; show empty/error behavior as appropriate.
-- [ ] Open an event details page and refresh its direct URL.
-- [ ] Copy an event link, open it in another tab, and demonstrate external sharing.
-- [ ] Download an `.ics` file with **Add to Calendar**.
-- [ ] Register for an eligible free event as an attendee and verify the database record.
-- [ ] Verify duplicate registration prevention and relevant authorization/eligibility restrictions.
-- [ ] Run `npx vitest run`, `npm run lint`, and `npm run build`.
-- [ ] Show the official GitHub repository, merged pull requests, P3 backlog, and deployment architecture.
-
 ## Project Structure
 
 ```text
@@ -266,10 +241,6 @@ See `frontend/README.md` for additional frontend information.
 
 - Logo assets: `frontend/public/brand/` and `frontend/public/favicon.svg`.
 - Design guidelines: [`docs/design-guidelines.md`](docs/design-guidelines.md).
-
-## Collaboration and Evaluation
-
-The project uses GitHub branches, pull requests, reviews, and merges. The instructor and TAs can review the official repository, commit history, automated tests, working software, and the public deployment. The team submitted its **P3 – Iteration Release I** report on November 8, 2026.
 
 ## Known Limitations and Future Work
 
