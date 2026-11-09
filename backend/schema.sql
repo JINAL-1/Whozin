@@ -24,3 +24,21 @@ CREATE TABLE IF NOT EXISTS events (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+CREATE TABLE IF NOT EXISTS registrations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  attendee_id INT NOT NULL,
+  event_id INT NOT NULL,
+  registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE (attendee_id, event_id),
+
+  FOREIGN KEY (attendee_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (event_id)
+    REFERENCES events(id)
+    ON DELETE CASCADE
+);
