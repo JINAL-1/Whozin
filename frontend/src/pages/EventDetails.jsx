@@ -8,7 +8,7 @@ import Button from '../components/ui/Button.jsx'
 import { ROUTES, eventPath } from '../routes.js'
 import { getEventById } from '../services/getEvent.js'
 import { sampleEvents } from '../data/sampleEvents.js'
-import { registerForEvent } from '../services/registerEvent.js'
+import { registerForEvent } from '../services/registrationApi.js'
 import { formatPrice, getDateParts } from '../utils/formatEvent.js'
 import './EventDetails.css'
 import './StatusPage.css'
@@ -66,7 +66,7 @@ function EventDetails() {
     try {
       user = JSON.parse(localStorage.getItem('user') || 'null')
     } catch {
-      user = null
+      // Keep user as null if stored data is invalid
     }
 
     if (user?.role !== 'attendee') {
