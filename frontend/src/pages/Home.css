@@ -46,15 +46,25 @@
   min-height: 52px;
 }
 
+.hero__inner--solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .hero__tickets {
   position: relative;
-  display: grid;
-  gap: var(--space-6);
   padding-inline: var(--space-4);
 }
 
+.hero__tickets ul {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .hero__ticket {
-  animation: ticket-drop 0.7s cubic-bezier(0.2, 0.8, 0.25, 1.05) both;
+  animation: ticket-in 0.35s ease-out both;
 }
 
 .hero__ticket:nth-child(1) {
@@ -65,23 +75,74 @@
 .hero__ticket:nth-child(2) {
   --tilt: 3deg;
   margin-left: var(--space-8);
-  animation-delay: 0.12s;
+  animation-delay: 0.08s;
 }
 
 .hero__ticket {
   transform: rotate(var(--tilt));
 }
 
-@keyframes ticket-drop {
+@keyframes ticket-in {
   from {
     opacity: 0;
-    transform: translateY(-28px) rotate(calc(var(--tilt) * -2));
   }
 
   to {
     opacity: 1;
-    transform: rotate(var(--tilt));
   }
+}
+
+/* Grey blocks the size of an event card while events load. */
+.card-placeholder {
+  height: 11rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  animation: placeholder-pulse 1.4s ease-in-out infinite;
+}
+
+.hero .card-placeholder {
+  background: var(--color-bg);
+}
+
+@keyframes placeholder-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__ticket,
+  .card-placeholder {
+    animation: none;
+  }
+}
+
+.home-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-8);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.home-state h3 {
+  font-size: var(--text-lg);
+}
+
+.home-state p {
+  margin-bottom: var(--space-2);
+}
+
+.home-state--note {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
 }
 
 .home-section {
