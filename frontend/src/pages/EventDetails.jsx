@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import ShareButton from '../components/events/ShareButton.jsx'
@@ -16,7 +15,7 @@ import './StatusPage.css'
 function EventDetails() {
   const { id } = useParams()
   const [attempt, setAttempt] = useState(0)
-  const [result, setResult] = useState({ key: null, event: null, error: '' })
+  const [result, setResult] = useState({ key: null, event: null, error: '', checkedAt: 0 })
 
   // US-06: Registration states
   const [registering, setRegistering] = useState(false)
@@ -32,7 +31,7 @@ function EventDetails() {
 
     getEventById(id)
       .then((event) => {
-        if (active) setResult({ key: requestKey, event, error: '' })
+        if (active) setResult({ key: requestKey, event, error: '', checkedAt: Date.now() })
       })
       .catch((requestError) => {
         if (active) {
@@ -40,6 +39,7 @@ function EventDetails() {
             key: requestKey,
             event: null,
             error: requestError.message || 'Unable to load this event.',
+            checkedAt: Date.now(),
           })
         }
       })
@@ -136,6 +136,12 @@ function EventDetails() {
   const priceLabel = formatPrice(event.price)
   const shareUrl = new URL(eventPath(event.id), window.location.origin).href
 
+  // A cancelled or past event keeps its page, so old links still explain
+  // what happened, but people can't register, save or share it.
+  const isCancelled = event.status === 'cancelled'
+  const hasEnded = hasDate && new Date(event.startsAt).getTime() < result.checkedAt
+  const isActive = !isCancelled && !hasEnded
+
   // US-06: Check event eligibility
   const isFreeEvent =
     event.price !== null &&
@@ -150,6 +156,7 @@ function EventDetails() {
     )
 
   const canRegister =
+    isActive &&
     isBackendEvent &&
     isFreeEvent &&
     event.status === 'published'
@@ -173,6 +180,25 @@ function EventDetails() {
           <h1 id="event-title">{event.title}</h1>
         </div>
       </header>
+
+      {!isActive && (
+        <section
+          className={`event-details__notice ${isCancelled ? '' : 'event-details__notice--ended'}`.trim()}
+          aria-labelledby="notice-title"
+        >
+          <h2 id="notice-title">
+            {isCancelled ? 'This event has been cancelled' : 'This event has already happened'}
+          </h2>
+          <p>
+            {isCancelled
+              ? "The organizer cancelled it, so it's no longer taking place."
+              : 'Have a look at what else is coming up in Thunder Bay.'}
+          </p>
+          <Button to={ROUTES.search} variant="secondary" size="sm">
+            Find other events
+          </Button>
+        </section>
+      )}
 
       <dl className="event-details__facts">
         <div>
@@ -224,16 +250,20 @@ function EventDetails() {
         </section>
       )}
 
-      <section className="event-details__calendar" aria-labelledby="calendar-title">
-        <h2 id="calendar-title">Save this event</h2>
-        <Add2Cal event={event} />
-      </section>
+      {isActive && (
+        <section className="event-details__calendar" aria-labelledby="calendar-title">
+          <h2 id="calendar-title">Save this event</h2>
+          <Add2Cal event={event} />
+        </section>
+      )}
 
-      <section className="event-details__share" aria-labelledby="share-title">
-        <h2 id="share-title">Share this event</h2>
-        <ShareButton url={shareUrl} />
-        <ShareLinks title={event.title} url={shareUrl} />
-      </section>
+      {isActive && (
+        <section className="event-details__share" aria-labelledby="share-title">
+          <h2 id="share-title">Share this event</h2>
+          <ShareButton url={shareUrl} />
+          <ShareLinks title={event.title} url={shareUrl} />
+        </section>
+      )}
     </article>
   )
 }

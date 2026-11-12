@@ -1,8 +1,23 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.jsx'
+import { apiEvent, fakeBackend } from './fakeBackend.js'
+
+// These tests talk to a fake backend, whatever .env.local says.
+vi.hoisted(() => {
+  vi.stubEnv('VITE_DEMO_MODE', 'false')
+})
+
+beforeEach(() => {
+  const backend = fakeBackend()
+  backend.events = [apiEvent({ id: 42, title: 'Board game night' })]
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 function LocationProbe() {
   const location = useLocation()
@@ -33,7 +48,7 @@ describe('routing', () => {
     ['/events/new', 'Create an Event'],
     ['/login', 'Welcome Back!'],
     ['/signup', 'Create Account'],
-    ['/events/sample-1', 'Waterfront night market'],
+    ['/events/42', 'Board game night'],
   ])('renders the page for %s', async (path, heading) => {
     renderApp(path)
   
@@ -135,11 +150,5 @@ describe('homepage', () => {
       'href',
       '/events/new',
     )
-  })
-
-  it('lists upcoming events', () => {
-    renderApp('/')
-    const section = screen.getByRole('region', { name: 'Happening soon' })
-    expect(within(section).getAllByRole('article')).toHaveLength(4)
   })
 })

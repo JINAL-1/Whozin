@@ -1,19 +1,65 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import EventCard from '../components/events/EventCard.jsx'
 import Button from '../components/ui/Button.jsx'
 import FormField from '../components/ui/FormField.jsx'
-import { sampleEvents } from '../data/sampleEvents.js'
 import { ROUTES, eventPath } from '../routes.js'
+import { searchEvents } from '../services/eventApi.js'
 import './Home.css'
 
-const heroEvents = sampleEvents.slice(0, 2)
-const upcomingEvents = sampleEvents.slice(2, 6)
+const NEXT_UP_COUNT = 2
+const SOON_COUNT = 4
+
+// Events that haven't started yet, soonest first, each listed once.
+function upcomingOnly(events, now) {
+  const byId = new Map()
+
+  for (const event of events) {
+    const startsAt = new Date(event.startsAt).getTime()
+    if (startsAt >= now && !byId.has(String(event.id))) {
+      byId.set(String(event.id), { event, startsAt })
+    }
+  }
+
+  return [...byId.values()]
+    .sort((a, b) => a.startsAt - b.startsAt)
+    .map(({ event }) => event)
+}
+
+function CardPlaceholder() {
+  return <div className="card-placeholder" />
+}
 
 function Home() {
   const navigate = useNavigate()
   const [keyword, setKeyword] = useState('')
   const [location, setLocation] = useState('Thunder Bay')
+  const [attempt, setAttempt] = useState(0)
+  const [feed, setFeed] = useState({ attempt: null, events: [], failed: false })
+
+  useEffect(() => {
+    let active = true
+
+    searchEvents()
+      .then((events) => {
+        if (active) setFeed({ attempt, events: upcomingOnly(events, Date.now()), failed: false })
+      })
+      .catch(() => {
+        if (active) setFeed({ attempt, events: [], failed: true })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [attempt])
+
+  const loading = feed.attempt !== attempt
+  const failed = !loading && feed.failed
+  // The next two events sit in the hero and the four after them are listed
+  // below, so no event shows up twice.
+  const nextUp = loading ? [] : feed.events.slice(0, NEXT_UP_COUNT)
+  const soon = loading ? [] : feed.events.slice(NEXT_UP_COUNT, NEXT_UP_COUNT + SOON_COUNT)
+  const showTickets = loading || nextUp.length > 0
 
   const handleSearch = (event) => {
     event.preventDefault()
@@ -27,7 +73,7 @@ function Home() {
   return (
     <>
       <section className="hero" aria-labelledby="hero-title">
-        <div className="container hero__inner">
+        <div className={`container hero__inner ${showTickets ? '' : 'hero__inner--solo'}`.trim()}>
           <div className="hero__copy">
             <h1 id="hero-title" className="hero__title">
               See what's on in Thunder Bay, and who's in.
@@ -58,11 +104,33 @@ function Home() {
             </form>
           </div>
 
-          <div className="hero__tickets" aria-hidden="true">
-            {heroEvents.map((event) => (
-              <EventCard key={event.id} event={event} className="hero__ticket" />
-            ))}
-          </div>
+          {loading && (
+            <div className="hero__tickets" aria-hidden="true">
+              <ul>
+                <li className="hero__ticket">
+                  <CardPlaceholder />
+                </li>
+                <li className="hero__ticket">
+                  <CardPlaceholder />
+                </li>
+              </ul>
+            </div>
+          )}
+
+          {nextUp.length > 0 && (
+            <section className="hero__tickets" aria-labelledby="next-up-title">
+              <h2 id="next-up-title" className="visually-hidden">
+                Next up
+              </h2>
+              <ul>
+                {nextUp.map((event) => (
+                  <li key={event.id} className="hero__ticket">
+                    <EventCard event={event} to={eventPath(event.id)} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </section>
 
@@ -74,13 +142,54 @@ function Home() {
               See all events
             </Button>
           </div>
-          <ul className="event-grid">
-            {upcomingEvents.map((event) => (
-              <li key={event.id}>
-                <EventCard event={event} to={eventPath(event.id)} />
-              </li>
-            ))}
-          </ul>
+
+          {loading && (
+            <>
+              <p className="visually-hidden" role="status">
+                Loading events...
+              </p>
+              <ul className="event-grid" aria-hidden="true">
+                {Array.from({ length: SOON_COUNT }, (_, index) => (
+                  <li key={index}>
+                    <CardPlaceholder />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {failed && (
+            <div className="home-state" role="alert">
+              <h3>We couldn't load events right now</h3>
+              <p>The server might be busy or offline. Please try again in a moment.</p>
+              <Button variant="secondary" onClick={() => setAttempt((count) => count + 1)}>
+                Try again
+              </Button>
+            </div>
+          )}
+
+          {!loading && !failed && feed.events.length === 0 && (
+            <div className="home-state">
+              <h3>No upcoming events yet</h3>
+              <p>New events will show up here as soon as they're posted.</p>
+            </div>
+          )}
+
+          {soon.length > 0 && (
+            <ul className="event-grid">
+              {soon.map((event) => (
+                <li key={event.id}>
+                  <EventCard event={event} to={eventPath(event.id)} />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!loading && nextUp.length > 0 && soon.length === 0 && (
+            <p className="home-state home-state--note">
+              That's everything coming up for now. Check back soon for more.
+            </p>
+          )}
         </div>
       </section>
 
