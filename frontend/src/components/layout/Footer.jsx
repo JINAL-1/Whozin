@@ -1,10 +1,13 @@
 import { Link } from 'react-router'
-import { MAIN_NAV, ROUTES } from '../../routes.js'
+import { ROUTES, navLinksFor } from '../../routes.js'
+import { useSession } from '../../services/session.js'
 import Logo from '../brand/Logo.jsx'
 
 const YEAR = new Date().getFullYear()
 
 function Footer() {
+  const session = useSession()
+
   return (
     <footer className="footer">
       <div className="container footer__inner">
@@ -18,7 +21,7 @@ function Footer() {
             <li>
               <Link to={ROUTES.home}>Home</Link>
             </li>
-            {MAIN_NAV.map((item) => (
+            {navLinksFor(session).map((item) => (
               <li key={item.to}>
                 <Link to={item.to}>{item.label}</Link>
               </li>

@@ -1,9 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../App.jsx'
-import { apiEvent, fakeBackend } from './fakeBackend.js'
+import { apiEvent, fakeBackend, logInAs } from './fakeBackend.js'
 
 // These tests talk to a fake backend, whatever .env.local says.
 vi.hoisted(() => {
@@ -16,7 +16,9 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 function LocationProbe() {
@@ -150,5 +152,87 @@ describe('homepage', () => {
       'href',
       '/events/new',
     )
+  })
+})
+
+describe('account in the navbar', () => {
+  it('shows Log in, Sign up and only the public pages when logged out', () => {
+    renderApp('/')
+    const nav = mainNav()
+
+    expect(within(nav).getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login')
+    expect(within(nav).getByRole('link', { name: 'Sign up' })).toHaveAttribute('href', '/signup')
+    expect(within(nav).getByRole('link', { name: 'Create event' })).toBeInTheDocument()
+    expect(within(nav).queryByRole('link', { name: 'My events' })).not.toBeInTheDocument()
+    expect(within(nav).queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
+  })
+
+  it('shows the account, organizer pages and Log out for an organizer', () => {
+    logInAs('organizer', { email: 'host@lakeheadu.ca' })
+    renderApp('/')
+    const nav = mainNav()
+
+    expect(within(nav).getByText('host@lakeheadu.ca')).toBeInTheDocument()
+    expect(within(nav).getByText('Organizer')).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: 'Create event' })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: 'My events' })).toHaveAttribute('href', '/events/mine')
+    expect(within(nav).getByRole('button', { name: 'Log out' })).toBeInTheDocument()
+    expect(within(nav).queryByRole('link', { name: 'Log in' })).not.toBeInTheDocument()
+  })
+
+  it('does not show organizer pages to attendees', () => {
+    logInAs('attendee')
+    renderApp('/')
+    const nav = mainNav()
+
+    expect(within(nav).getByText('Attendee')).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: 'Find events' })).toBeInTheDocument()
+    expect(within(nav).queryByRole('link', { name: 'Create event' })).not.toBeInTheDocument()
+    expect(within(nav).queryByRole('link', { name: 'My events' })).not.toBeInTheDocument()
+  })
+
+  it('logs out and goes back to the homepage', async () => {
+    const user = userEvent.setup()
+    logInAs('organizer')
+    renderApp('/events/mine')
+
+    await user.click(within(mainNav()).getByRole('button', { name: 'Log out' }))
+
+    expect(localStorage.getItem('token')).toBeNull()
+    expect(localStorage.getItem('user')).toBeNull()
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/)
+    expect(within(mainNav()).getByRole('link', { name: 'Log in' })).toBeInTheDocument()
+  })
+
+  it('treats an expired login as logged out', async () => {
+    logInAs('organizer', { seconds: -60 })
+    renderApp('/')
+
+    expect(await within(mainNav()).findByRole('link', { name: 'Log in' })).toBeInTheDocument()
+    expect(localStorage.getItem('token')).toBeNull()
+  })
+
+  it('logs out when the login expires while the site is open', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    logInAs('organizer', { seconds: 5 })
+    renderApp('/')
+    expect(within(mainNav()).getByRole('button', { name: 'Log out' })).toBeInTheDocument()
+
+    await act(async () => {
+      vi.advanceTimersByTime(6000)
+    })
+
+    expect(within(mainNav()).getByRole('link', { name: 'Log in' })).toBeInTheDocument()
+    expect(localStorage.getItem('token')).toBeNull()
+  })
+
+  it('shows a login saved without a page reload once the user moves on', async () => {
+    const user = userEvent.setup()
+    renderApp('/')
+
+    logInAs('organizer', { email: 'new@lakeheadu.ca' })
+    await user.click(within(mainNav()).getByRole('link', { name: 'Find events' }))
+
+    expect(within(mainNav()).getByText('new@lakeheadu.ca')).toBeInTheDocument()
   })
 })
