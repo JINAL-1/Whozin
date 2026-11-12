@@ -37,9 +37,14 @@ function renderApp(path = '/') {
 
 const mainNav = () => screen.getByRole('navigation', { name: 'Main' })
 
+// The homepage loads events after it first renders. Waiting for them keeps
+// React from warning that the page updated after the test finished.
+const homeEventsLoaded = () => screen.findByRole('link', { name: 'Board game night' })
+
 describe('routing', () => {
-  it('shows the homepage at /', () => {
+  it('shows the homepage at /', async () => {
     renderApp('/')
+    await homeEventsLoaded()
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       "See what's on in Thunder Bay",
     )
@@ -146,8 +151,9 @@ describe('homepage', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/search$/)
   })
 
-  it('links organizers to the create event page', () => {
+  it('links organizers to the create event page', async () => {
     renderApp('/')
+    await homeEventsLoaded()
     expect(screen.getByRole('link', { name: 'Create an event' })).toHaveAttribute(
       'href',
       '/events/new',
@@ -156,8 +162,9 @@ describe('homepage', () => {
 })
 
 describe('account in the navbar', () => {
-  it('shows Log in, Sign up and only the public pages when logged out', () => {
+  it('shows Log in, Sign up and only the public pages when logged out', async () => {
     renderApp('/')
+    await homeEventsLoaded()
     const nav = mainNav()
 
     expect(within(nav).getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login')
@@ -167,9 +174,10 @@ describe('account in the navbar', () => {
     expect(within(nav).queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument()
   })
 
-  it('shows the account, organizer pages and Log out for an organizer', () => {
+  it('shows the account, organizer pages and Log out for an organizer', async () => {
     logInAs('organizer', { email: 'host@lakeheadu.ca' })
     renderApp('/')
+    await homeEventsLoaded()
     const nav = mainNav()
 
     expect(within(nav).getByText('host@lakeheadu.ca')).toBeInTheDocument()
@@ -180,9 +188,10 @@ describe('account in the navbar', () => {
     expect(within(nav).queryByRole('link', { name: 'Log in' })).not.toBeInTheDocument()
   })
 
-  it('does not show organizer pages to attendees', () => {
+  it('does not show organizer pages to attendees', async () => {
     logInAs('attendee')
     renderApp('/')
+    await homeEventsLoaded()
     const nav = mainNav()
 
     expect(within(nav).getByText('Attendee')).toBeInTheDocument()
@@ -207,6 +216,7 @@ describe('account in the navbar', () => {
   it('treats an expired login as logged out', async () => {
     logInAs('organizer', { seconds: -60 })
     renderApp('/')
+    await homeEventsLoaded()
 
     expect(await within(mainNav()).findByRole('link', { name: 'Log in' })).toBeInTheDocument()
     expect(localStorage.getItem('token')).toBeNull()
