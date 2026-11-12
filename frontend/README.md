@@ -31,10 +31,10 @@ src/
     brand/             Logo
     ui/                Button, FormField
     events/            EventCard
-  pages/               Home, Login, Signup, CreateEvent, NotFound, ComingSoon
+  pages/               Home, Login, Signup, CreateEvent, MyEvents, EventDetails, NotFound
   services/            API calls (eventApi.js)
   styles/              Page styles for auth and create event
-  data/                Sample events for the homepage
+  data/                Sample events for demo mode
   utils/               Date and price formatting
   tests/               Test setup and test files
 public/
@@ -55,15 +55,19 @@ public/
 | `/signup` | Sign up (US-01) | Done |
 | anything else | Page not found | Done |
 
-To plug in a page, import it in `App.jsx` and replace the matching `<ComingSoon />`, for example:
+To add a page, import it in `App.jsx` and add a route inside the `Layout` route, for example:
 
 ```jsx
 <Route path={ROUTES.search} element={<SearchEvents />} />
 ```
 
+The navbar and footer only show links the visitor can use: logged-out visitors see Find events and Create event, attendees see Find events, and organizers also see My events. The list is `MAIN_NAV` in `routes.js`. When someone is logged in, the navbar shows their email, their role and a Log out button. `useSession()` in `services/session.js` returns the logged-in user (or `null`), and `endSession()` logs them out. A login whose token has expired is cleared automatically.
+
 Every page is wrapped in `Layout`, so it gets the navbar and footer automatically. Use `ROUTES` from `routes.js` for links instead of typing paths. To link to one event, use `eventPath(event.id)`, for example `<EventCard event={event} to={eventPath(event.id)} />`.
 
-The event page finds the event with `getEventById(id)` in `services/getEvent.js`. The homepage's sample events open straight from the app. Other events come from the same list as search, so in demo mode an event created in one browser can only be opened in that browser; with the backend (`VITE_DEMO_MODE=false`), a shared link works on any device.
+The homepage loads real events from the backend. It leaves out events that have already started, puts the next two in the hero and the four after those under Happening soon, so no event is listed twice. While events load it shows grey placeholders, and if the server can't be reached it shows a Try again button.
+
+The event page loads one event with `getEventById(id)` in `services/getEvent.js`, which calls `GET /api/events/:id`. A cancelled or past event still opens, with a notice at the top, but without Register, Add to Calendar or Share. In demo mode (`VITE_DEMO_MODE=true`) the event comes from the demo list instead, so an event created in one browser only opens in that browser.
 
 The homepage search sends people to `/search?q=<keyword>&location=<place>`. The search page can read these with `useSearchParams()` from `react-router`.
 
@@ -124,12 +128,11 @@ Dates are always shown in Thunder Bay time (America/Toronto). If the API uses di
 
 ## Tests
 
-Tests live in `src/tests/`. `navigation.test.jsx` covers routing, the navbar, the mobile menu and the homepage search; `components.test.jsx` covers Button, FormField, EventCard, the formatters and the logo; `CreateEvent.test.jsx` covers the create event form; `SearchEvents.test.jsx` covers search; `shareEvent.test.jsx` covers the event page and the share link. The share tests replace the event list themselves, so they pass in demo mode and with `VITE_DEMO_MODE=false`. Add new test files as `*.test.jsx`; the jsdom environment and jest-dom matchers are already set up.
+Tests live in `src/tests/`. `navigation.test.jsx` covers routing, the navbar (including logging in and out), the mobile menu and the homepage search; `homepage.test.jsx` covers the homepage events; `components.test.jsx` covers Button, FormField, EventCard, the formatters and the logo; `CreateEvent.test.jsx` covers the create event form; `SearchEvents.test.jsx` covers search; `shareEvent.test.jsx` covers the event page and the share link. Tests that need event data use the fake backend in `src/tests/fakeBackend.js`, which replaces `fetch`, so they don't need the real server and pass whatever `.env.local` says. Add new test files as `*.test.jsx`; the jsdom environment and jest-dom matchers are already set up.
 
 Design rules and manual layout checks are in `../docs/design-guidelines.md`.
 
 ## Known gaps
 
-- The homepage shows sample events from `src/data/sampleEvents.js` until the events API is ready.
-- The event page loads the event from the search list. A dedicated `GET /api/events/:id` endpoint would be faster once there are many events, and would let a shared link to a cancelled event say it was cancelled instead of "Event not found".
+- Search still lists events that have already happened, because `GET /api/events` returns them. The homepage filters them out.
 - `vercel.json` sends every page path to `index.html` on Vercel, so a shared `/events/<id>` link or a page refresh opens the right page. Other hosts need the same rule, or they show their own 404 page.
