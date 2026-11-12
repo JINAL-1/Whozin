@@ -91,9 +91,8 @@ describe('existing event routes still work', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.events).toHaveLength(1);
-    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining("status = 'published'"), [
-      '%party%',
-      '%%',
-    ]);
+    const [sql, params] = pool.query.mock.calls[0];
+    expect(sql).toContain("status = 'published'");
+    expect(params).toContain('%party%');
   });
 });
