@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import "../styles/auth.css";
 
@@ -62,6 +61,7 @@ function Signup() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            name: formData.name.trim(),
             email: formData.email,
             password: formData.password,
             role: formData.role,
@@ -141,6 +141,7 @@ function Signup() {
             placeholder="Enter your full name"
             value={formData.name}
             onChange={handleChange}
+            maxLength={100}
             required
           />
 
