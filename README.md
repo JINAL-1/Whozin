@@ -33,7 +33,7 @@ Event information in Thunder Bay is spread across social media, posters, and ind
 - **Accounts and authentication (US-01):** Attendee and organizer signup/login, with JWT authentication and role-based restrictions.
 - **Create events (US-02):** Authenticated organizers can create events saved through the API to MySQL.
 - **Edit and cancel events (US-03):** Organizers can update or cancel their events.
-- **Search events (US-05):** Search by keyword and location using the real backend API by default. Loading, empty-results, and server-error states are handled; sample/demo data is used only when `VITE_DEMO_MODE=true`.
+- **Search events (US-05):** Search upcoming events (today or later, Thunder Bay time) by keyword and location using the real backend API by default. Loading, empty-results, and server-error states are handled; sample/demo data is used only when `VITE_DEMO_MODE=true`.
 - **Register for free events (US-06):** Logged-in attendees can register for eligible free events. The backend validates requests and records registrations in MySQL, with a unique attendee/event constraint to prevent duplicates. Integration was tested against the deployed backend and database.
 - **Share events (US-10):** Individual event pages at `/events/:id` support copying a link and sharing via email, WhatsApp, Facebook, and X, with device sharing where supported. **In-app posting to a Whozin feed is not yet implemented.**
 - **Add to calendar (US-11):** Download an `.ics` calendar file from event interfaces, including the event details page.
@@ -199,9 +199,33 @@ npm run build
 | `navigation.test.jsx` | 14 |
 | **Total** | **66** |
 
+**Latest result (November 16, 2026): 83/83 frontend tests passed across seven test files, and 34/34 backend tests passed across three test files.** ESLint and the Vite production build also completed successfully.
+
+| Test file | Passing tests |
+|---|---:|
+| `frontend/src/tests/CreateEvent.test.jsx` | 5 |
+| `frontend/src/tests/components.test.jsx` | 13 |
+| `frontend/src/tests/MyEvents.test.jsx` | 8 |
+| `frontend/src/tests/SearchEvents.test.jsx` | 10 |
+| `frontend/src/tests/homepage.test.jsx` | 8 |
+| `frontend/src/tests/shareEvent.test.jsx` | 19 |
+| `frontend/src/tests/navigation.test.jsx` | 20 |
+| `backend/tests/getEvent.test.js` | 11 |
+| `backend/tests/auth.test.js` | 17 |
+| `backend/tests/searchEvents.test.js` | 6 |
+| **Total** | **117** |
+
+Run the backend tests **from `backend/`**. They replace the database with a mock, so no MySQL connection is needed:
+
+```bash
+cd backend
+npm install
+npm test
+```
+
 The P3 test suite includes search loading and server-error states, routing, event management UI, and external sharing behavior. Some tests mock event data or API responses and therefore **are not end-to-end database tests**. The team separately performed manual production integration checks involving the Vercel frontend, Render API, and Aiven MySQL database, including event search and free registration persistence. Rerun the suite on the latest commit because results can change as development continues.
 
-## API Overview (P3)
+## API Overview
 
 The following routes are documented from the team's implemented functionality. Refer to `backend/src/routes/` for exact HTTP methods, route names, request payloads, and authorization rules before calling endpoints directly.
 
@@ -209,13 +233,15 @@ The following routes are documented from the team's implemented functionality. R
 |---|---|---|
 | `POST` | `/api/auth/register` | Create attendee or organizer account |
 | `POST` | `/api/auth/login` | Authenticate and obtain a JWT |
-| `GET` | `/api/events` | Retrieve and search events using keyword/location filters |
+| `GET` | `/api/events` | Search published events from today onwards by keyword/location |
+| `GET` | `/api/events/:id` | Get one event by id, including cancelled events (with their status) |
+| `GET` | `/api/events/mine` | List the logged-in organizer's events |
 | `POST` | `/api/events` | Create an event (organizer authorization required) |
 | `PUT` | `/api/events/:id` | Edit an existing event, subject to authorization |
 | `PATCH` | `/api/events/:id/cancel` | Cancel an event, subject to authorization |
-| See source | Registration route in `backend/src/routes/registration.js` | Register an authenticated attendee for an eligible free event |
+| `POST` | `/api/registrations/:eventId` | Register an authenticated attendee for an eligible free event |
 
-**Important:** `/events/:id` is a **frontend page route**. A dedicated backend `GET /api/events/:id` endpoint is planned for a future iteration; the P3 event details page currently retrieves an event through the existing event-list/search service.
+`/events/:id` is the **frontend page route** for one event; it loads the event from `GET /api/events/:id`. Routes that need a login share one check in `backend/src/middleware/auth.js`: no token returns `401`, an expired or invalid token returns `403`.
 
 ## Project Structure
 
@@ -245,7 +271,6 @@ See `frontend/README.md` for additional frontend information.
 ## Known Limitations and Future Work
 
 - **In-app sharing/posts:** External links work, but sharing as a post within Whozin requires user profiles and feeds.
-- **Dedicated event-details API:** A future `GET /api/events/:id` endpoint would improve direct event retrieval and handling of cancelled events.
 - **Further registration coverage:** Extend automated and regression testing of registration, including deployment/database failure scenarios.
 - **Not yet implemented:** Personalized event feed (US-04), Stripe ticket purchases (US-07), digital tickets (US-08), cancellation/refunds (US-09), and notifications/reminders (US-12).
 - **Broader product vision:** Richer filters, profiles, social interactions, and additional event-discovery features remain future work.
