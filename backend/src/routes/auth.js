@@ -18,6 +18,7 @@ function signToken(user) {
 // POST /api/auth/register
 router.post(
   '/register',
+  body('name').optional({ values: 'null' }).trim().isLength({ max: 100 }).withMessage('Name must be 100 characters or less'),
   body('email').trim().isEmail().withMessage('A valid email is required').toLowerCase(),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('role').optional().isIn(['attendee', 'organizer']).withMessage('Role must be attendee or organizer'),
@@ -30,7 +31,7 @@ router.post(
       });
     }
 
-    const { email, password, role = 'attendee' } = req.body;
+    const { name, email, password, role = 'attendee' } = req.body;
 
     try {
       const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
@@ -41,11 +42,11 @@ router.post(
       // Hash the password so the plain text is never stored
       const passwordHash = await bcrypt.hash(password, 10);
       const [result] = await pool.query(
-        'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
-        [email, passwordHash, role]
+        'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+        [name || null, email, passwordHash, role]
       );
 
-      const user = { id: result.insertId, email, role };
+      const user = { id: result.insertId, name: name || null, email, role };
       res.status(201).json({ token: signToken(user), user });
     } catch (err) {
       console.error('Register error:', err.message);
@@ -72,7 +73,7 @@ router.post(
 
     try {
       const [rows] = await pool.query(
-        'SELECT id, email, password_hash, role FROM users WHERE email = ?',
+        'SELECT id, name, email, password_hash, role FROM users WHERE email = ?',
         [email]
       );
       const user = rows[0];
@@ -83,7 +84,7 @@ router.post(
         return res.status(401).json({ error: 'Invalid email or password' });
       }
 
-      const safeUser = { id: user.id, email: user.email, role: user.role };
+      const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role };
       res.json({ token: signToken(safeUser), user: safeUser });
     } catch (err) {
       console.error('Login error:', err.message);
