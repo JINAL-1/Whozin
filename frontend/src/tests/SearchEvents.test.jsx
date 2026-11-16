@@ -34,12 +34,13 @@ const events = [
   },
 ]
 
-// Events in the format returned by Pranav's backend.
+// Events in the format returned by Pranav's backend. Dated in the future so
+// the search page doesn't hide them as finished.
 const backendEvents = [
   {
     id: 1,
     title: 'Open mic night',
-    event_date: '2026-11-14T05:00:00.000Z',
+    event_date: '2099-11-14T05:00:00.000Z',
     event_time: '19:30:00',
     location: 'Lakehead University, the Agora',
     ticket_price: '0.00',
@@ -47,7 +48,7 @@ const backendEvents = [
   {
     id: 2,
     title: 'Waterfront night market',
-    event_date: '2026-11-07T05:00:00.000Z',
+    event_date: '2099-11-07T05:00:00.000Z',
     event_time: '17:00:00',
     location: "Prince Arthur's Landing",
     ticket_price: '0.00',
@@ -55,7 +56,7 @@ const backendEvents = [
   {
     id: 3,
     title: 'Community art fair',
-    event_date: '2026-11-20T05:00:00.000Z',
+    event_date: '2099-11-20T05:00:00.000Z',
     event_time: '13:00:00',
     location: 'Lakehead University',
     ticket_price: '5.00',
@@ -195,6 +196,36 @@ describe('SearchEvents page', () => {
       await screen.findByRole('heading', { name: 'We could not load events' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Could not retrieve events')).toBeInTheDocument()
+  })
+
+  it('hides events that have already started', async () => {
+    const started = new Date(Date.now() - 60 * 60 * 1000)
+    const today = [
+      started.getFullYear(),
+      String(started.getMonth() + 1).padStart(2, '0'),
+      String(started.getDate()).padStart(2, '0'),
+    ].join('-')
+
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      mockResponse({
+        events: [
+          ...backendEvents,
+          {
+            id: 4,
+            title: 'Morning yoga',
+            event_date: today,
+            event_time: `${String(started.getHours()).padStart(2, '0')}:${String(started.getMinutes()).padStart(2, '0')}:00`,
+            location: 'Thunder Bay',
+            ticket_price: '0.00',
+          },
+        ],
+      }),
+    ))
+
+    renderSearch('/search')
+
+    expect(await screen.findByText('3 events found')).toBeInTheDocument()
+    expect(screen.queryByText('Morning yoga')).not.toBeInTheDocument()
   })
 
   it('shows a no-results message', async () => {

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,6 +31,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -115,6 +116,31 @@ describe('homepage events', () => {
     expect(
       await screen.findByText("That's everything coming up for now. Check back soon for more."),
     ).toBeInTheDocument()
+  })
+
+  it('removes an event when it starts, without reloading the page', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const startsSoon = new Date(Date.now() + 2 * 60 * 1000)
+    const date = [
+      startsSoon.getFullYear(),
+      String(startsSoon.getMonth() + 1).padStart(2, '0'),
+      String(startsSoon.getDate()).padStart(2, '0'),
+    ].join('-')
+    const time = `${String(startsSoon.getHours()).padStart(2, '0')}:${String(startsSoon.getMinutes()).padStart(2, '0')}:00`
+    backend.events = [
+      apiEvent({ id: 20, title: 'Sunrise run', event_date: date, event_time: time }),
+      ...events,
+    ]
+    renderHome()
+
+    expect(await screen.findByRole('link', { name: 'Sunrise run' })).toBeInTheDocument()
+
+    await act(async () => {
+      vi.advanceTimersByTime(4 * 60 * 1000)
+    })
+
+    expect(screen.queryByRole('link', { name: 'Sunrise run' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Board game night' })).toBeInTheDocument()
   })
 
   it('shows an error and loads the events again with Try again', async () => {

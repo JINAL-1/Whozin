@@ -4,16 +4,23 @@ import EventCard from '../components/events/EventCard.jsx'
 import Button from '../components/ui/Button.jsx'
 import FormField from '../components/ui/FormField.jsx'
 import { eventPath } from '../routes.js'
+import { useNow } from '../hooks/useNow.js'
 import { searchEvents } from '../services/eventApi.js'
+import { hasStarted } from '../utils/eventTiming.js'
 import './SearchEvents.css'
 
 function SearchEvents() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [keyword, setKeyword] = useState(searchParams.get('q') ?? '')
   const [location, setLocation] = useState(searchParams.get('location') ?? '')
-  const [events, setEvents] = useState([])
+  const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const now = useNow()
+  // The server leaves out past days. This also hides events from earlier
+  // today, and events that start while the page is open.
+  const events = results.filter((event) => !hasStarted(event, now))
 
   const query = searchParams.get('q') ?? ''
   const place = searchParams.get('location') ?? ''
@@ -26,11 +33,11 @@ function SearchEvents() {
       setError('')
 
       try {
-        const results = await searchEvents({ keyword: query, location: place })
-        if (active) setEvents(results)
+        const found = await searchEvents({ keyword: query, location: place })
+        if (active) setResults(found)
       } catch (requestError) {
         if (active) {
-          setEvents([])
+          setResults([])
           setError(requestError.message || 'Unable to load events.')
         }
       } finally {

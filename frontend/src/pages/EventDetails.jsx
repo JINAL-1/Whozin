@@ -5,7 +5,9 @@ import ShareLinks from '../components/events/ShareLinks.jsx'
 import Add2Cal from '../components/events/Add2Cal.jsx'
 import Button from '../components/ui/Button.jsx'
 import { ROUTES, eventPath } from '../routes.js'
+import { useNow } from '../hooks/useNow.js'
 import { getEventById } from '../services/getEvent.js'
+import { hasStarted } from '../utils/eventTiming.js'
 import { sampleEvents } from '../data/sampleEvents.js'
 import { registerForEvent } from '../services/registrationApi.js'
 import { formatPrice, getDateParts } from '../utils/formatEvent.js'
@@ -15,7 +17,8 @@ import './StatusPage.css'
 function EventDetails() {
   const { id } = useParams()
   const [attempt, setAttempt] = useState(0)
-  const [result, setResult] = useState({ key: null, event: null, error: '', checkedAt: 0 })
+  const [result, setResult] = useState({ key: null, event: null, error: '' })
+  const now = useNow()
 
   // US-06: Registration states
   const [registering, setRegistering] = useState(false)
@@ -31,7 +34,7 @@ function EventDetails() {
 
     getEventById(id)
       .then((event) => {
-        if (active) setResult({ key: requestKey, event, error: '', checkedAt: Date.now() })
+        if (active) setResult({ key: requestKey, event, error: '' })
       })
       .catch((requestError) => {
         if (active) {
@@ -39,7 +42,6 @@ function EventDetails() {
             key: requestKey,
             event: null,
             error: requestError.message || 'Unable to load this event.',
-            checkedAt: Date.now(),
           })
         }
       })
@@ -139,7 +141,7 @@ function EventDetails() {
   // A cancelled or past event keeps its page, so old links still explain
   // what happened, but people can't register, save or share it.
   const isCancelled = event.status === 'cancelled'
-  const hasEnded = hasDate && new Date(event.startsAt).getTime() < result.checkedAt
+  const hasEnded = hasStarted(event, now)
   const isActive = !isCancelled && !hasEnded
 
   // US-06: Check event eligibility
@@ -187,12 +189,12 @@ function EventDetails() {
           aria-labelledby="notice-title"
         >
           <h2 id="notice-title">
-            {isCancelled ? 'This event has been cancelled' : 'This event has already happened'}
+            {isCancelled ? 'This event has been cancelled' : 'This event has already started'}
           </h2>
           <p>
             {isCancelled
               ? "The organizer cancelled it, so it's no longer taking place."
-              : 'Have a look at what else is coming up in Thunder Bay.'}
+              : 'Registration and sharing are closed. Have a look at what else is coming up in Thunder Bay.'}
           </p>
           <Button to={ROUTES.search} variant="secondary" size="sm">
             Find other events

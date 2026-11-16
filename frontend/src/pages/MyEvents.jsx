@@ -1,6 +1,8 @@
 
 import { useEffect, useState } from 'react'
+import { useNow } from '../hooks/useNow'
 import { getMyEvents, updateEvent, cancelEvent } from '../services/eventApi'
+import { hasStarted } from '../utils/eventTiming'
 import { validateEvent } from '../utils/validateEvent'
 import '../styles/CreateEvent.css'
 
@@ -12,6 +14,18 @@ function formatTime(time) {
   return String(time).slice(0, 5)
 }
 
+// An event that has started can't be edited or cancelled any more.
+function isOver(event, now) {
+  const startsAt = `${formatDate(event.event_date)}T${formatTime(event.event_time)}`
+  return hasStarted({ startsAt }, now)
+}
+
+function statusLabel(event, now) {
+  if (event.status === 'cancelled') return 'Cancelled'
+  if (isOver(event, now)) return 'Ended'
+  return 'Published'
+}
+
 export default function MyEvents() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,6 +35,7 @@ export default function MyEvents() {
   const [form, setForm] = useState(null)
   const [formErrors, setFormErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const now = useNow()
 
   async function loadEvents() {
     try {
@@ -174,7 +189,7 @@ export default function MyEvents() {
             <h2>{event.title}</h2>
 
             <p>
-              <strong>Status:</strong> {event.status}
+              <strong>Status:</strong> {statusLabel(event, now)}
             </p>
 
             <p>
@@ -189,7 +204,7 @@ export default function MyEvents() {
               <strong>Location:</strong> {event.location}
             </p>
 
-            {event.status === 'published' && editingId !== event.id && (
+            {event.status === 'published' && !isOver(event, now) && editingId !== event.id && (
               <div className="form-actions">
                 <button
                   type="button"
