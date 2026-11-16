@@ -69,6 +69,9 @@ export default function MyEvents() {
       location: event.location,
       image: event.image_url || '',
       ticketType: Number(event.ticket_price) > 0 ? 'paid' : 'free',
+      // Load the saved price so a paid event passes validation and keeps
+      // its price when the organizer saves other changes.
+      ticketPrice: Number(event.ticket_price) > 0 ? String(event.ticket_price) : '',
     })
   }
 
@@ -282,6 +285,31 @@ export default function MyEvents() {
                     <span className="field-error">{formErrors.location}</span>
                   )}
                 </div>
+
+                {form.ticketType === 'paid' && (
+                  <div className="form-field">
+                    <label htmlFor="edit-ticketPrice">Ticket price (CAD) *</label>
+                    <input
+                      id="edit-ticketPrice"
+                      name="ticketPrice"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      inputMode="decimal"
+                      value={form.ticketPrice}
+                      onChange={handleChange}
+                      aria-invalid={Boolean(formErrors.ticketPrice)}
+                      aria-describedby={
+                        formErrors.ticketPrice ? 'edit-ticketPrice-error' : undefined
+                      }
+                    />
+                    {formErrors.ticketPrice && (
+                      <span id="edit-ticketPrice-error" className="field-error">
+                        {formErrors.ticketPrice}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="form-field">
                   <label htmlFor="edit-image">Image URL</label>

@@ -154,6 +154,90 @@ describe('My Events page', () => {
     ).toBeInTheDocument()
   })
 
+  describe('paid events', () => {
+    const paidEvent = {
+      ...testEvents[0],
+      id: 3,
+      title: 'Jazz Night',
+      ticket_price: '15.00',
+    }
+
+    beforeEach(() => {
+      getMyEvents.mockResolvedValue([{ ...paidEvent }])
+    })
+
+    async function openPaidEventEditor() {
+      render(<MyEvents />)
+      await screen.findByText('Jazz Night')
+      fireEvent.click(screen.getByRole('button', { name: 'Edit Event' }))
+    }
+
+    it('shows the saved price when editing a paid event', async () => {
+      await openPaidEventEditor()
+
+      expect(screen.getByLabelText('Ticket price (CAD) *')).toHaveValue(15)
+    })
+
+    it('keeps the price when other details of a paid event are edited', async () => {
+      await openPaidEventEditor()
+
+      fireEvent.change(screen.getByLabelText('Event title *'), {
+        target: { value: 'Late Jazz Night' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      await waitFor(() => {
+        expect(updateEvent).toHaveBeenCalledWith(
+          3,
+          expect.objectContaining({
+            title: 'Late Jazz Night',
+            ticketType: 'paid',
+            ticketPrice: '15.00',
+          })
+        )
+      })
+      expect(await screen.findByText('Event updated successfully!')).toBeInTheDocument()
+    })
+
+    it('saves a new price for a paid event', async () => {
+      await openPaidEventEditor()
+
+      fireEvent.change(screen.getByLabelText('Ticket price (CAD) *'), {
+        target: { value: '20' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      await waitFor(() => {
+        expect(updateEvent).toHaveBeenCalledWith(
+          3,
+          expect.objectContaining({ ticketPrice: '20' })
+        )
+      })
+    })
+
+    it('does not save a paid event without a price', async () => {
+      await openPaidEventEditor()
+
+      fireEvent.change(screen.getByLabelText('Ticket price (CAD) *'), {
+        target: { value: '' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+      expect(await screen.findByText('Enter a ticket price greater than 0.')).toBeInTheDocument()
+      expect(updateEvent).not.toHaveBeenCalled()
+    })
+
+    it('does not show a price box for free events', async () => {
+      getMyEvents.mockResolvedValue([{ ...testEvents[0] }])
+      render(<MyEvents />)
+      await screen.findByText('Music Night')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Edit Event' }))
+
+      expect(screen.queryByLabelText('Ticket price (CAD) *')).not.toBeInTheDocument()
+    })
+  })
+
   it('does not show edit buttons for cancelled events', async () => {
     render(<MyEvents />)
     await screen.findByText('Cancelled Workshop')
