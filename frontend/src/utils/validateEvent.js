@@ -46,6 +46,13 @@ export function validateEvent(form) {
         errors.image = "Enter a valid image URL.";
       }
     }
+        if (form.ticketType === "paid") {
+      const price = Number(form.ticketPrice);
+      if (!form.ticketPrice || Number.isNaN(price) || price <= 0) {
+        errors.ticketPrice = "Enter a ticket price greater than 0.";
+      }
+    }
+
   
     return errors;
   }
