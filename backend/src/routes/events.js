@@ -3,7 +3,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
-const { todayInThunderBay } = require('../utils/dates');
+const { nowInThunderBay } = require('../utils/dates');
 
 const router = express.Router();
 
@@ -72,8 +72,8 @@ router.post(
   }
 );
 
-// GET /api/events?keyword=&location= - search published events that are
-// today or later, so past events don't show up in search results
+// GET /api/events?keyword=&location= - search published events that haven't
+// started yet, so finished events don't show up in search results
 router.get('/', async (req, res) => {
   const { keyword = '', location = '' } = req.query;
 
@@ -85,9 +85,9 @@ router.get('/', async (req, res) => {
        WHERE status = 'published'
          AND title LIKE ?
          AND location LIKE ?
-         AND event_date >= ?
+         AND TIMESTAMP(event_date, event_time) > ?
        ORDER BY event_date ASC, event_time ASC`,
-      [`%${keyword}%`, `%${location}%`, todayInThunderBay()]
+      [`%${keyword}%`, `%${location}%`, nowInThunderBay()]
     );
 
     return res.json({ events });

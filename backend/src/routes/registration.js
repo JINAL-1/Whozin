@@ -2,6 +2,7 @@
 const express = require('express');
 const pool = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { nowInThunderBay } = require('../utils/dates');
 
 const router = express.Router();
 
@@ -22,8 +23,11 @@ router.post('/:eventId', authenticateToken, async (req, res) => {
   try {
     // Find event in database
     const [events] = await pool.query(
-      'SELECT id, ticket_price, status FROM events WHERE id = ?',
-      [eventId]
+      `SELECT id, ticket_price, status,
+              TIMESTAMP(event_date, event_time) <= ? AS has_started
+       FROM events
+       WHERE id = ?`,
+      [nowInThunderBay(), eventId]
     );
 
     if (events.length === 0) {
@@ -36,6 +40,13 @@ router.post('/:eventId', authenticateToken, async (req, res) => {
     if (event.status !== 'published') {
       return res.status(400).json({
         error: 'Registration is closed for this event',
+      });
+    }
+
+    // Block events that have already started
+    if (event.has_started) {
+      return res.status(400).json({
+        error: 'This event has already started, so registration is closed',
       });
     }
 
