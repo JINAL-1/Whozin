@@ -42,7 +42,7 @@ function toSearchableEvent(eventData) {
     id: `demo-${Date.now()}`,
     startsAt,
     category: eventData.category || 'Community',
-    price: eventData.ticketType === 'free' ? 0 :Number(eventData.ticketPrice) ,
+    price: eventData.ticketType === 'free' ? 0 : Number(eventData.ticketPrice),
   }
 }
 
@@ -75,7 +75,7 @@ export async function createEvent(eventData) {
     event_time: eventData.time,
     location: eventData.location,
     image_url: eventData.image || null,
-    ticket_price: eventData.ticketType === 'paid' ? Number(eventData.ticketPrice) : 0
+    ticket_price: eventData.ticketType === 'paid' ? Number(eventData.ticketPrice) : 0,
     capacity: null,
   }
 
@@ -219,7 +219,8 @@ export async function updateEvent(id, form) {
       event_time: form.time,
       location: form.location,
       image_url: form.image || null,
-      ticket_price: 0,
+      // Keep the existing price when editing instead of resetting it to free.
+      ticket_price: Number(form.ticketPrice ?? form.ticket_price ?? 0),
       capacity: null,
     }),
   });
