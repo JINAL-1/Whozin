@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { createEvent } from "../services/eventApi";
 import { validateEvent } from "../utils/validateEvent";
@@ -12,6 +11,7 @@ const initialForm = {
   location: "",
   image: "",
   ticketType: "free",
+  ticketPrice: "",
 };
 
 export default function CreateEvent() {
@@ -27,11 +27,15 @@ export default function CreateEvent() {
     setForm((previous) => ({
       ...previous,
       [name]: value,
+      // Switching back to a free event clears any price that was typed.
+      ...(name === "ticketType" && value === "free" ? { ticketPrice: "" } : {}),
     }));
 
     setErrors((previous) => ({
       ...previous,
       [name]: "",
+      // A price error no longer applies once the event is set to free.
+      ...(name === "ticketType" && value === "free" ? { ticketPrice: "" } : {}),
     }));
 
     setMessage("");
@@ -238,6 +242,32 @@ export default function CreateEvent() {
             </div>
             {errors.ticketType && (
               <span className="field-error">{errors.ticketType}</span>
+            )}
+
+            {form.ticketType === "paid" && (
+              <div className="form-field">
+                <label htmlFor="ticketPrice">Ticket price (CAD) *</label>
+                <input
+                  id="ticketPrice"
+                  name="ticketPrice"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  inputMode="decimal"
+                  placeholder="e.g. 15.00"
+                  value={form.ticketPrice}
+                  onChange={handleChange}
+                  aria-invalid={Boolean(errors.ticketPrice)}
+                  aria-describedby={
+                    errors.ticketPrice ? "ticketPrice-error" : undefined
+                  }
+                />
+                {errors.ticketPrice && (
+                  <span id="ticketPrice-error" className="field-error">
+                    {errors.ticketPrice}
+                  </span>
+                )}
+              </div>
             )}
           </fieldset>
 
