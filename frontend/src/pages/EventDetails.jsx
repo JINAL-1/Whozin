@@ -9,7 +9,7 @@ import { useNow } from '../hooks/useNow.js'
 import { getEventById } from '../services/getEvent.js'
 import { hasStarted } from '../utils/eventTiming.js'
 import { sampleEvents } from '../data/sampleEvents.js'
-import { registerForEvent } from '../services/registrationApi.js'
+import EventRegistration from '../components/events/EventRegistration.jsx'
 import { formatPrice, getDateParts } from '../utils/formatEvent.js'
 import './EventDetails.css'
 import './StatusPage.css'
@@ -19,12 +19,6 @@ function EventDetails() {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState({ key: null, event: null, error: '' })
   const now = useNow()
-
-  // US-06: Registration states
-  const [registering, setRegistering] = useState(false)
-  const [registrationMessage, setRegistrationMessage] = useState('')
-  const [registrationError, setRegistrationError] = useState('')
-  const [registeredEventId, setRegisteredEventId] = useState(null)
 
   // A new key on each load (or retry), so the page knows when it is still loading.
   const requestKey = `${id}:${attempt}`
@@ -50,49 +44,6 @@ function EventDetails() {
       active = false
     }
   }, [id, requestKey])
-
-  // US-06: Register attendee for a free event
-  const handleRegistration = async () => {
-    if (registering || String(registeredEventId) === String(id)) return
-
-    setRegistrationError('')
-    setRegistrationMessage('')
-
-    if (!localStorage.getItem('token')) {
-      setRegistrationError('Please log in to register for this event.')
-      return
-    }
-
-    let user = null
-
-    try {
-      user = JSON.parse(localStorage.getItem('user') || 'null')
-    } catch {
-      // Keep user as null if stored data is invalid
-    }
-
-    if (user?.role !== 'attendee') {
-      setRegistrationError('Only attendees can register for events.')
-      return
-    }
-
-    setRegistering(true)
-
-    try {
-      const response = await registerForEvent(id)
-
-      setRegisteredEventId(id)
-      setRegistrationMessage(
-        response.message || 'Registration successful!'
-      )
-    } catch (error) {
-      setRegistrationError(
-        error.message || 'Registration failed. Please try again.'
-      )
-    } finally {
-      setRegistering(false)
-    }
-  }
 
   if (result.key !== requestKey) {
     return (
@@ -225,31 +176,7 @@ function EventDetails() {
 
       {/* US-06: Free Event Registration */}
       {canRegister && (
-        <section
-          className="event-details__registration"
-          aria-labelledby="registration-title"
-        >
-          <h2 id="registration-title">Event Registration</h2>
-
-          <Button
-            onClick={handleRegistration}
-            disabled={registering || String(registeredEventId) === String(id)}
-          >
-            {registering
-              ? 'Registering...'
-              : String(registeredEventId) === String(id)
-                ? 'Registered'
-                : 'Register for Free'}
-          </Button>
-
-          {registrationMessage && (
-            <p role="status">{registrationMessage}</p>
-          )}
-
-          {registrationError && (
-            <p role="alert">{registrationError}</p>
-          )}
-        </section>
+        <EventRegistration key={event.id} eventId={event.id} initialGoing={event.going_count ?? 0} />
       )}
 
       {isActive && (
