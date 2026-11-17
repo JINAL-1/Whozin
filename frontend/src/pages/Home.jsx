@@ -4,27 +4,13 @@ import EventCard from '../components/events/EventCard.jsx'
 import Button from '../components/ui/Button.jsx'
 import FormField from '../components/ui/FormField.jsx'
 import { ROUTES, eventPath } from '../routes.js'
+import { useNow } from '../hooks/useNow.js'
 import { searchEvents } from '../services/eventApi.js'
+import { upcomingOnly } from '../utils/eventTiming.js'
 import './Home.css'
 
 const NEXT_UP_COUNT = 2
 const SOON_COUNT = 4
-
-// Events that haven't started yet, soonest first, each listed once.
-function upcomingOnly(events, now) {
-  const byId = new Map()
-
-  for (const event of events) {
-    const startsAt = new Date(event.startsAt).getTime()
-    if (startsAt >= now && !byId.has(String(event.id))) {
-      byId.set(String(event.id), { event, startsAt })
-    }
-  }
-
-  return [...byId.values()]
-    .sort((a, b) => a.startsAt - b.startsAt)
-    .map(({ event }) => event)
-}
 
 function CardPlaceholder() {
   return <div className="card-placeholder" />
@@ -36,13 +22,14 @@ function Home() {
   const [location, setLocation] = useState('Thunder Bay')
   const [attempt, setAttempt] = useState(0)
   const [feed, setFeed] = useState({ attempt: null, events: [], failed: false })
+  const now = useNow()
 
   useEffect(() => {
     let active = true
 
     searchEvents()
       .then((events) => {
-        if (active) setFeed({ attempt, events: upcomingOnly(events, Date.now()), failed: false })
+        if (active) setFeed({ attempt, events, failed: false })
       })
       .catch(() => {
         if (active) setFeed({ attempt, events: [], failed: true })
@@ -55,10 +42,13 @@ function Home() {
 
   const loading = feed.attempt !== attempt
   const failed = !loading && feed.failed
+  // Worked out on every render, so an event drops off the page as soon as
+  // it starts, even if the page has been open for a while.
+  const upcoming = upcomingOnly(feed.events, now)
   // The next two events sit in the hero and the four after them are listed
   // below, so no event shows up twice.
-  const nextUp = loading ? [] : feed.events.slice(0, NEXT_UP_COUNT)
-  const soon = loading ? [] : feed.events.slice(NEXT_UP_COUNT, NEXT_UP_COUNT + SOON_COUNT)
+  const nextUp = loading ? [] : upcoming.slice(0, NEXT_UP_COUNT)
+  const soon = loading ? [] : upcoming.slice(NEXT_UP_COUNT, NEXT_UP_COUNT + SOON_COUNT)
   const showTickets = loading || nextUp.length > 0
 
   const handleSearch = (event) => {
@@ -168,7 +158,7 @@ function Home() {
             </div>
           )}
 
-          {!loading && !failed && feed.events.length === 0 && (
+          {!loading && !failed && upcoming.length === 0 && (
             <div className="home-state">
               <h3>No upcoming events yet</h3>
               <p>New events will show up here as soon as they're posted.</p>

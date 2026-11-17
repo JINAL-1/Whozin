@@ -81,11 +81,11 @@ describe('event page', () => {
     expect(screen.getByRole('link', { name: 'Find other events' })).toHaveAttribute('href', '/search')
   })
 
-  it('says when an event has already happened', async () => {
+  it('says when an event has already started', async () => {
     renderApp('/events/44')
 
     expect(await eventHeading('Fall harvest potluck')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'This event has already happened' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'This event has already started' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Copy link' })).not.toBeInTheDocument()
   })
 

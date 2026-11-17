@@ -5,9 +5,11 @@ import ShareLinks from '../components/events/ShareLinks.jsx'
 import Add2Cal from '../components/events/Add2Cal.jsx'
 import Button from '../components/ui/Button.jsx'
 import { ROUTES, eventPath } from '../routes.js'
+import { useNow } from '../hooks/useNow.js'
 import { getEventById } from '../services/getEvent.js'
+import { hasStarted } from '../utils/eventTiming.js'
 import { sampleEvents } from '../data/sampleEvents.js'
-import { registerForEvent } from '../services/registrationApi.js'
+import EventRegistration from '../components/events/EventRegistration.jsx'
 import { formatPrice, getDateParts } from '../utils/formatEvent.js'
 import './EventDetails.css'
 import './StatusPage.css'
@@ -15,13 +17,8 @@ import './StatusPage.css'
 function EventDetails() {
   const { id } = useParams()
   const [attempt, setAttempt] = useState(0)
-  const [result, setResult] = useState({ key: null, event: null, error: '', checkedAt: 0 })
-
-  // US-06: Registration states
-  const [registering, setRegistering] = useState(false)
-  const [registrationMessage, setRegistrationMessage] = useState('')
-  const [registrationError, setRegistrationError] = useState('')
-  const [registeredEventId, setRegisteredEventId] = useState(null)
+  const [result, setResult] = useState({ key: null, event: null, error: '' })
+  const now = useNow()
 
   // A new key on each load (or retry), so the page knows when it is still loading.
   const requestKey = `${id}:${attempt}`
@@ -31,7 +28,7 @@ function EventDetails() {
 
     getEventById(id)
       .then((event) => {
-        if (active) setResult({ key: requestKey, event, error: '', checkedAt: Date.now() })
+        if (active) setResult({ key: requestKey, event, error: '' })
       })
       .catch((requestError) => {
         if (active) {
@@ -39,7 +36,6 @@ function EventDetails() {
             key: requestKey,
             event: null,
             error: requestError.message || 'Unable to load this event.',
-            checkedAt: Date.now(),
           })
         }
       })
@@ -48,49 +44,6 @@ function EventDetails() {
       active = false
     }
   }, [id, requestKey])
-
-  // US-06: Register attendee for a free event
-  const handleRegistration = async () => {
-    if (registering || String(registeredEventId) === String(id)) return
-
-    setRegistrationError('')
-    setRegistrationMessage('')
-
-    if (!localStorage.getItem('token')) {
-      setRegistrationError('Please log in to register for this event.')
-      return
-    }
-
-    let user = null
-
-    try {
-      user = JSON.parse(localStorage.getItem('user') || 'null')
-    } catch {
-      // Keep user as null if stored data is invalid
-    }
-
-    if (user?.role !== 'attendee') {
-      setRegistrationError('Only attendees can register for events.')
-      return
-    }
-
-    setRegistering(true)
-
-    try {
-      const response = await registerForEvent(id)
-
-      setRegisteredEventId(id)
-      setRegistrationMessage(
-        response.message || 'Registration successful!'
-      )
-    } catch (error) {
-      setRegistrationError(
-        error.message || 'Registration failed. Please try again.'
-      )
-    } finally {
-      setRegistering(false)
-    }
-  }
 
   if (result.key !== requestKey) {
     return (
@@ -139,7 +92,7 @@ function EventDetails() {
   // A cancelled or past event keeps its page, so old links still explain
   // what happened, but people can't register, save or share it.
   const isCancelled = event.status === 'cancelled'
-  const hasEnded = hasDate && new Date(event.startsAt).getTime() < result.checkedAt
+  const hasEnded = hasStarted(event, now)
   const isActive = !isCancelled && !hasEnded
 
   // US-06: Check event eligibility
@@ -187,12 +140,12 @@ function EventDetails() {
           aria-labelledby="notice-title"
         >
           <h2 id="notice-title">
-            {isCancelled ? 'This event has been cancelled' : 'This event has already happened'}
+            {isCancelled ? 'This event has been cancelled' : 'This event has already started'}
           </h2>
           <p>
             {isCancelled
               ? "The organizer cancelled it, so it's no longer taking place."
-              : 'Have a look at what else is coming up in Thunder Bay.'}
+              : 'Registration and sharing are closed. Have a look at what else is coming up in Thunder Bay.'}
           </p>
           <Button to={ROUTES.search} variant="secondary" size="sm">
             Find other events
@@ -223,31 +176,7 @@ function EventDetails() {
 
       {/* US-06: Free Event Registration */}
       {canRegister && (
-        <section
-          className="event-details__registration"
-          aria-labelledby="registration-title"
-        >
-          <h2 id="registration-title">Event Registration</h2>
-
-          <Button
-            onClick={handleRegistration}
-            disabled={registering || String(registeredEventId) === String(id)}
-          >
-            {registering
-              ? 'Registering...'
-              : String(registeredEventId) === String(id)
-                ? 'Registered'
-                : 'Register for Free'}
-          </Button>
-
-          {registrationMessage && (
-            <p role="status">{registrationMessage}</p>
-          )}
-
-          {registrationError && (
-            <p role="alert">{registrationError}</p>
-          )}
-        </section>
+        <EventRegistration key={event.id} eventId={event.id} initialGoing={event.going_count ?? 0} />
       )}
 
       {isActive && (

@@ -154,6 +154,25 @@ describe('My Events page', () => {
     ).toBeInTheDocument()
   })
 
+  it('marks finished events as Ended and does not allow editing or cancelling them', async () => {
+    getMyEvents.mockResolvedValue([
+      {
+        ...testEvents[0],
+        id: 4,
+        title: 'Fall Potluck',
+        event_date: '2020-10-03T00:00:00.000Z',
+        event_time: '17:00:00',
+      },
+    ])
+
+    render(<MyEvents />)
+    await screen.findByText('Fall Potluck')
+
+    expect(screen.getByText('Ended')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit Event' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancel Event' })).not.toBeInTheDocument()
+  })
+
   it('does not show edit buttons for cancelled events', async () => {
     render(<MyEvents />)
     await screen.findByText('Cancelled Workshop')

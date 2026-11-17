@@ -1,0 +1,35 @@
+.event-registration {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.event-registration p {
+  margin: 0;
+}
+
+.event-registration__going {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.event-registration__registered {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.event-registration__badge {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.event-registration [role='alert'] {
+  color: var(--color-error);
+  font-weight: 700;
+}

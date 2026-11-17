@@ -5,7 +5,17 @@ jest.mock('../src/db', () => ({ query: jest.fn() }));
 
 const pool = require('../src/db');
 const app = require('../src/app');
-const { todayInThunderBay } = require('../src/utils/dates');
+const { todayInThunderBay, nowInThunderBay } = require('../src/utils/dates');
+
+// Only the clock is faked, so Supertest's own timers keep working.
+const REAL_TIMERS = [
+  'nextTick', 'setImmediate', 'clearImmediate', 'setInterval', 'clearInterval',
+  'setTimeout', 'clearTimeout', 'queueMicrotask',
+];
+
+afterEach(() => {
+  jest.useRealTimers();
+});
 
 beforeEach(() => {
   pool.query.mockReset();
@@ -13,20 +23,25 @@ beforeEach(() => {
 });
 
 describe('GET /api/events', () => {
-  it('only asks for events from today onwards', async () => {
+  it('only asks for events that have not started yet', async () => {
+    // 10:30 p.m. on Nov 11 in Thunder Bay.
+    jest.useFakeTimers({ now: new Date('2026-11-12T03:30:05Z'), doNotFake: REAL_TIMERS });
+
     const res = await request(app).get('/api/events');
 
     expect(res.status).toBe(200);
     const [sql, params] = pool.query.mock.calls[0];
-    expect(sql).toContain('event_date >= ?');
-    expect(params).toEqual(['%%', '%%', todayInThunderBay()]);
+    expect(sql).toContain('TIMESTAMP(event_date, event_time) > ?');
+    expect(params).toEqual(['%%', '%%', '2026-11-11 22:30:05']);
   });
 
   it('still filters by keyword and location', async () => {
+    jest.useFakeTimers({ now: new Date('2026-11-12T03:30:05Z'), doNotFake: REAL_TIMERS });
+
     await request(app).get('/api/events?keyword=jazz&location=Thunder%20Bay');
 
     const [, params] = pool.query.mock.calls[0];
-    expect(params).toEqual(['%jazz%', '%Thunder Bay%', todayInThunderBay()]);
+    expect(params).toEqual(['%jazz%', '%Thunder Bay%', '2026-11-11 22:30:05']);
   });
 
   it('still only returns published events, soonest first', async () => {
@@ -46,6 +61,20 @@ describe('GET /api/events', () => {
     expect(res.status).toBe(500);
     expect(res.body).toEqual({ error: 'Could not retrieve events' });
     console.error.mockRestore();
+  });
+});
+
+describe('nowInThunderBay', () => {
+  it('gives the date and time in Thunder Bay, not UTC', () => {
+    expect(nowInThunderBay(new Date('2026-11-12T03:30:05Z'))).toBe('2026-11-11 22:30:05');
+  });
+
+  it('writes midnight as 00, not 24', () => {
+    expect(nowInThunderBay(new Date('2026-11-12T05:00:00Z'))).toBe('2026-11-12 00:00:00');
+  });
+
+  it('follows daylight saving time in the summer', () => {
+    expect(nowInThunderBay(new Date('2026-07-01T16:15:00Z'))).toBe('2026-07-01 12:15:00');
   });
 });
 
