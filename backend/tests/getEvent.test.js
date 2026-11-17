@@ -32,8 +32,18 @@ describe('GET /api/events/:id', () => {
     const res = await request(app).get('/api/events/42');
 
     expect(res.status).toBe(200);
-    expect(res.body.event).toEqual(publishedEvent);
+    expect(res.body.event).toEqual({ ...publishedEvent, going_count: 0 });
     expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('WHERE id = ?'), [42]);
+  });
+
+  it('includes how many people are going', async () => {
+    // MySQL returns COUNT(*) as a string in some setups.
+    pool.query.mockResolvedValue([[{ ...publishedEvent, going_count: '12' }]]);
+
+    const res = await request(app).get('/api/events/42');
+
+    expect(res.body.event.going_count).toBe(12);
+    expect(pool.query.mock.calls[0][0]).toContain('FROM registrations');
   });
 
   it('returns a cancelled event with its status', async () => {

@@ -287,7 +287,8 @@ router.get('/mine', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/events/:id - one event, for the event page and shared links.
+// GET /api/events/:id - one event, for the event page and shared links,
+// with going_count (how many attendees are registered).
 // Cancelled events are returned too (with their status), so the page can
 // say the event was cancelled instead of "not found".
 // This route stays below /mine so that /mine is not read as an id.
@@ -299,7 +300,8 @@ router.get('/:id', async (req, res) => {
   try {
     const [events] = await pool.query(
       `SELECT id, organizer_id, title, description, event_date, event_time,
-              location, image_url, ticket_price, capacity, status, created_at
+              location, image_url, ticket_price, capacity, status, created_at,
+              (SELECT COUNT(*) FROM registrations r WHERE r.event_id = events.id) AS going_count
        FROM events
        WHERE id = ?`,
       [Number(req.params.id)]
@@ -309,7 +311,8 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    return res.json({ event: events[0] });
+    const event = events[0];
+    return res.json({ event: { ...event, going_count: Number(event.going_count) || 0 } });
   } catch (err) {
     console.error('Get event error:', err.message);
     return res.status(500).json({ error: 'Could not retrieve event' });

@@ -62,3 +62,78 @@ describe('POST /api/registrations/:eventId', () => {
     expect(res.body.error).toBe('Registration is closed for this event');
   });
 });
+
+describe('GET /api/registrations/:eventId', () => {
+  const status = (eventId) =>
+    request(app)
+      .get(`/api/registrations/${eventId}`)
+      .set('Authorization', `Bearer ${attendeeToken()}`);
+
+  it('says registered when the attendee has a registration', async () => {
+    pool.query.mockResolvedValueOnce([[{ id: 9 }]]);
+
+    const res = await status(1);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ registered: true });
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('attendee_id = ?'), [5, 1]);
+  });
+
+  it('says not registered when there is no registration', async () => {
+    pool.query.mockResolvedValueOnce([[]]);
+
+    const res = await status(1);
+
+    expect(res.body).toEqual({ registered: false });
+  });
+
+  it('needs a login', async () => {
+    const res = await request(app).get('/api/registrations/1');
+
+    expect(res.status).toBe(401);
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid event id', async () => {
+    const res = await status('abc');
+
+    expect(res.status).toBe(400);
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+});
+
+describe('DELETE /api/registrations/:eventId', () => {
+  const cancel = (eventId) =>
+    request(app)
+      .delete(`/api/registrations/${eventId}`)
+      .set('Authorization', `Bearer ${attendeeToken()}`);
+
+  it("cancels the attendee's own registration", async () => {
+    pool.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const res = await cancel(1);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ message: 'Your registration was cancelled.' });
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('DELETE FROM registrations WHERE attendee_id = ? AND event_id = ?'),
+      [5, 1]
+    );
+  });
+
+  it('returns 404 when the attendee was not registered', async () => {
+    pool.query.mockResolvedValueOnce([{ affectedRows: 0 }]);
+
+    const res = await cancel(1);
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('You are not registered for this event');
+  });
+
+  it('needs a login', async () => {
+    const res = await request(app).delete('/api/registrations/1');
+
+    expect(res.status).toBe(401);
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+});
