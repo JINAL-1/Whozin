@@ -43,6 +43,48 @@ describe("Create Event validation", () => {
 
     expect(errors).toEqual({});
   });
+
+  it("rejects events with dates in the past", () => {
+    const errors = validateEvent({
+      title: "Past Event",
+      description: "This event has already happened",
+      date: "2020-01-01",
+      time: "19:00",
+      location: "Thunder Bay",
+      image: "",
+      ticketType: "free",
+    });
+  
+    expect(errors.date).toBe("Event date cannot be in the past.");
+  });
+  
+  it("rejects invalid ticket types", () => {
+    const errors = validateEvent({
+      title: "Music Night",
+      description: "Live music in Thunder Bay",
+      date: "2099-11-14",
+      time: "19:00",
+      location: "Thunder Bay",
+      image: "",
+      ticketType: "invalid",
+    });
+  
+    expect(errors.ticketType).toBe("Select a valid ticket option.");
+  });
+  
+  it("rejects invalid image URLs", () => {
+    const errors = validateEvent({
+      title: "Music Night",
+      description: "Live music in Thunder Bay",
+      date: "2099-11-14",
+      time: "19:00",
+      location: "Thunder Bay",
+      image: "javascript:alert('hello')",
+      ticketType: "free",
+    });
+  
+    expect(errors.image).toBe("Enter a valid HTTP or HTTPS image URL.");
+  });
 });
 
 describe("Create Event form", () => {
